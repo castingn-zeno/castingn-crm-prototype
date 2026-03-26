@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>캐스팅엔 CRM - 이메일</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #F0F9FF; color: #1E293B; height: 100vh; display: flex; flex-direction: column; }
+/* Top Bar */
+.topbar { background: #1A2332; color: #fff; padding: 12px 24px; display: flex; align-items: center; gap: 16px; }
+.topbar h1 { font-size: 18px; font-weight: 600; }
+.topbar .search { flex: 1; max-width: 480px; margin-left: 24px; }
+.topbar .search input { width: 100%; padding: 8px 14px 8px 36px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.15); background: rgba(255,255,255,0.08); color: #fff; font-size: 13px; outline: none; }
+.topbar .search input::placeholder { color: rgba(255,255,255,0.45); }
+.topbar .search { position: relative; }
+.topbar .search::before { content: "\uD83D\uDD0D"; position: absolute; left: 12px; top: 50%; transform: translateY(-50%); font-size: 13px; }
+.filters { display: flex; gap: 4px; margin-left: auto; }
+.filters button { padding: 6px 14px; border-radius: 6px; border: 1px solid rgba(255,255,255,0.15); background: transparent; color: rgba(255,255,255,0.7); font-size: 12px; cursor: pointer; transition: all .15s; }
+.filters button.active { background: #0891B2; color: #fff; border-color: #0891B2; }
+.filters button:hover { background: rgba(255,255,255,0.08); }
+
+/* Layout */
+.main { display: flex; flex: 1; overflow: hidden; }
+
+/* Sidebar */
+.sidebar { width: 220px; background: #fff; border-right: 1px solid #E2E8F0; padding: 16px 0; overflow-y: auto; flex-shrink: 0; }
+.compose-btn { margin: 0 16px 16px; padding: 10px; background: #0891B2; color: #fff; border: none; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; width: calc(100% - 32px); transition: background .15s; }
+.compose-btn:hover { background: #0e7490; }
+.folder { padding: 9px 16px 9px 20px; font-size: 13px; color: #1E293B; cursor: pointer; display: flex; align-items: center; justify-content: space-between; transition: background .1s; }
+.folder:hover { background: #F0F9FF; }
+.folder.active { background: #E0F2FE; color: #0891B2; font-weight: 600; }
+.folder .badge { background: #0891B2; color: #fff; font-size: 11px; padding: 1px 7px; border-radius: 10px; font-weight: 600; }
+.folder .badge.warn { background: #EF4444; }
+.folder-icon { margin-right: 8px; font-size: 14px; }
+.sidebar-divider { height: 1px; background: #E2E8F0; margin: 12px 16px; }
+.sidebar-label { font-size: 11px; color: #64748B; padding: 4px 20px 8px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
+
+/* Email List */
+.email-list { flex: 1; min-width: 360px; border-right: 1px solid #E2E8F0; background: #fff; overflow-y: auto; }
+.email-item { padding: 14px 18px; border-bottom: 1px solid #F1F5F9; cursor: pointer; display: flex; align-items: flex-start; gap: 12px; transition: background .1s; position: relative; }
+.email-item:hover { background: #F8FAFC; }
+.email-item.active { background: #E0F2FE; }
+.email-item.unread { background: #FAFCFF; }
+.email-item.unread .email-sender { font-weight: 700; }
+.email-item.unread .email-subject { font-weight: 600; }
+.email-item.unread::before { content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 3px; background: #0891B2; }
+.email-avatar { width: 36px; height: 36px; border-radius: 50%; background: #E0F2FE; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 700; color: #0891B2; flex-shrink: 0; }
+.email-content { flex: 1; min-width: 0; }
+.email-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 3px; }
+.email-sender { font-size: 13px; color: #1E293B; }
+.email-date { font-size: 11px; color: #94A3B8; white-space: nowrap; }
+.email-subject { font-size: 13px; color: #1E293B; margin-bottom: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.email-preview { font-size: 12px; color: #94A3B8; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.email-star { cursor: pointer; font-size: 14px; color: #CBD5E1; margin-left: 4px; flex-shrink: 0; padding-top: 2px; }
+.email-star.starred { color: #F59E0B; }
+
+/* Email Detail */
+.email-detail { width: 420px; background: #fff; overflow-y: auto; padding: 24px; flex-shrink: 0; }
+.detail-header { margin-bottom: 20px; }
+.detail-subject { font-size: 18px; font-weight: 700; color: #1A2332; margin-bottom: 16px; line-height: 1.4; }
+.detail-meta { display: flex; align-items: center; gap: 12px; margin-bottom: 8px; }
+.detail-avatar { width: 40px; height: 40px; border-radius: 50%; background: #0891B2; color: #fff; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 14px; }
+.detail-from { font-size: 14px; font-weight: 600; color: #1E293B; }
+.detail-email-addr { font-size: 12px; color: #64748B; }
+.detail-date { font-size: 12px; color: #94A3B8; }
+.detail-body { font-size: 14px; line-height: 1.7; color: #334155; margin-bottom: 24px; padding-top: 16px; border-top: 1px solid #E2E8F0; }
+.tracking-box { background: #F0F9FF; border: 1px solid #BAE6FD; border-radius: 10px; padding: 16px; margin-top: 16px; }
+.tracking-title { font-size: 12px; font-weight: 700; color: #0891B2; margin-bottom: 10px; display: flex; align-items: center; gap: 6px; }
+.tracking-row { display: flex; justify-content: space-between; font-size: 13px; color: #334155; margin-bottom: 6px; }
+.tracking-row span:first-child { color: #64748B; }
+.tracking-row span:last-child { font-weight: 600; }
+.detail-actions { display: flex; gap: 8px; margin-top: 20px; }
+.detail-actions button { padding: 8px 16px; border-radius: 8px; font-size: 13px; cursor: pointer; border: 1px solid #E2E8F0; background: #fff; color: #1E293B; transition: all .15s; }
+.detail-actions button:hover { background: #F8FAFC; }
+.detail-actions button.primary { background: #0891B2; color: #fff; border-color: #0891B2; }
+.detail-actions button.primary:hover { background: #0e7490; }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <h1>이메일</h1>
+  <div class="search"><input type="text" placeholder="이메일 검색..."></div>
+  <div class="filters">
+    <button class="active">전체</button>
+    <button>읽지 않음</button>
+    <button>별표</button>
+  </div>
+</div>
+
+<div class="main">
+  <!-- Sidebar -->
+  <div class="sidebar">
+    <button class="compose-btn">+ 메일 쓰기</button>
+    <div class="folder active"><span><span class="folder-icon">📥</span>받은메일함</span><span class="badge">12</span></div>
+    <div class="folder"><span><span class="folder-icon">📤</span>보낸메일함</span></div>
+    <div class="folder"><span><span class="folder-icon">⭐</span>중요메일함</span><span class="badge">3</span></div>
+    <div class="folder"><span><span class="folder-icon">↩️</span>반송메일</span><span class="badge warn">2</span></div>
+    <div class="folder"><span><span class="folder-icon">🗑️</span>휴지통</span></div>
+    <div class="sidebar-divider"></div>
+    <div class="sidebar-label">리소스</div>
+    <div class="folder"><span><span class="folder-icon">📋</span>템플릿</span><span class="badge" style="background:#64748B;">45</span></div>
+    <div class="folder"><span><span class="folder-icon">💬</span>상용구</span><span class="badge" style="background:#64748B;">12</span></div>
+  </div>
+
+  <!-- Email List -->
+  <div class="email-list" id="emailList"></div>
+
+  <!-- Email Detail -->
+  <div class="email-detail" id="emailDetail">
+    <div class="detail-header">
+      <div class="detail-subject">업무마켓9 도입 문의에 대한 회신</div>
+      <div class="detail-meta">
+        <div class="detail-avatar">김</div>
+        <div>
+          <div class="detail-from">김서준 팀장</div>
+          <div class="detail-email-addr">sjkim@hanwha.com</div>
+        </div>
+        <div class="detail-date" style="margin-left:auto;">2026.03.25 14:23</div>
+      </div>
+    </div>
+    <div class="detail-body">
+      안녕하세요 캐스팅엔 담당자님,<br><br>
+      지난 번 미팅에서 말씀해주신 업무마켓9 솔루션에 대해 내부 검토를 진행하였습니다.<br><br>
+      현재 저희 팀에서는 구매 프로세스 자동화에 큰 관심을 가지고 있으며, 특히 BSM(비즈니스 지출 관리) 기능이 저희 니즈에 잘 부합하는 것으로 판단됩니다.<br><br>
+      다음 주 중으로 상세 데모를 요청드리고 싶습니다. 가능한 일정을 회신 부탁드립니다.<br><br>
+      감사합니다.<br>
+      김서준 드림
+    </div>
+    <div class="tracking-box">
+      <div class="tracking-title">📊 열람 추적 정보</div>
+      <div class="tracking-row"><span>오픈 횟수</span><span>3회</span></div>
+      <div class="tracking-row"><span>마지막 오픈</span><span>2026.03.25 17:45</span></div>
+      <div class="tracking-row"><span>최초 오픈</span><span>2026.03.25 14:30</span></div>
+      <div class="tracking-row"><span>기기</span><span>Windows / Chrome</span></div>
+    </div>
+    <div class="detail-actions">
+      <button class="primary">↩ 답장</button>
+      <button>↪ 전달</button>
+      <button>🗑 삭제</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const emails = [
+  { sender: '김서준 팀장', initials: '김', email: 'sjkim@hanwha.com', subject: '업무마켓9 도입 문의에 대한 회신', preview: '지난 번 미팅에서 말씀해주신 업무마켓9 솔루션에 대해 내부 검토를 진행하였습니다...', date: '14:23', unread: true, starred: true },
+  { sender: '이수민 과장', initials: '이', email: 'smlee@samsung.com', subject: 'Re: 견적서 검토 요청', preview: '보내주신 견적서 확인했습니다. 몇 가지 항목에 대해 추가 논의가 필요합니다...', date: '13:10', unread: true, starred: false },
+  { sender: '박지영 대리', initials: '박', email: 'jypark@lgcns.com', subject: '[미팅확인] 3/27 제품 데모 일정 컨펌', preview: '안녕하세요, 다음 주 목요일 오후 2시 미팅 일정 확인 부탁드립니다...', date: '11:45', unread: true, starred: false },
+  { sender: '최민호 부장', initials: '최', email: 'mhchoi@sk.com', subject: '제안서 검토 결과 공유', preview: '전달해 주신 제안서를 검토하였습니다. 전체적인 방향은 적절하나...', date: '10:20', unread: false, starred: true },
+  { sender: '정다은 매니저', initials: '정', email: 'dejung@naver.com', subject: 'Re: 구매 관리 솔루션 소개서 요청', preview: '소개서 잘 받았습니다. 내부 공유 후 다시 연락드리겠습니다. 감사합니다.', date: '09:30', unread: true, starred: false },
+  { sender: '한승우 차장', initials: '한', email: 'swhan@hyundai.com', subject: '연간 계약 갱신 관련 문의', preview: '내년도 계약 갱신 일정 및 조건에 대해 미리 확인하고자 합니다...', date: '어제', unread: false, starred: false },
+  { sender: '오지현 주임', initials: '오', email: 'jhoh@cj.net', subject: '[급행] 데모 환경 접속 오류 건', preview: '안녕하세요, 어제 전달받은 데모 계정으로 접속 시 오류가 발생합니다...', date: '어제', unread: true, starred: true },
+  { sender: '강현수 팀장', initials: '강', email: 'hskang@lotte.com', subject: '업무마켓9 vs 경쟁사 비교표 요청', preview: '현재 3개 솔루션을 비교 검토 중입니다. 기능 비교표를 보내주실 수 있을까요?', date: '어제', unread: false, starred: false },
+  { sender: '윤하나 대리', initials: '윤', email: 'hnyoon@gs.com', subject: 'Re: 파일럿 프로젝트 진행 현황', preview: '파일럿 2주차 진행 현황을 공유드립니다. 전반적으로 긍정적인 피드백입니다...', date: '3/23', unread: false, starred: false },
+  { sender: '임재혁 과장', initials: '임', email: 'jhlim@posco.com', subject: '구매 프로세스 자동화 RFP 참여 요청', preview: '당사에서 구매 프로세스 자동화 프로젝트를 추진 중이며, RFP 참여를 요청드립니다...', date: '3/23', unread: true, starred: false },
+  { sender: '서연우 부장', initials: '서', email: 'ywseo@kakao.com', subject: 'Re: 미팅 후속 조치 사항', preview: '지난 미팅에서 논의된 사항 정리하여 보내드립니다. 확인 부탁드립니다.', date: '3/22', unread: false, starred: false },
+  { sender: '조은비 매니저', initials: '조', email: 'ebjo@daewoo.com', subject: '견적서 발송 확인 요청', preview: '지난주 요청드린 맞춤 견적서 발송 여부 확인 부탁드립니다.', date: '3/22', unread: false, starred: false },
+  { sender: '신동현 이사', initials: '신', email: 'dhshin@doosan.com', subject: '전사 도입 검토를 위한 경영진 미팅 요청', preview: '업무마켓9의 전사 도입을 검토하고 있어 경영진 대상 프레젠테이션을 요청드립니다...', date: '3/21', unread: true, starred: true },
+  { sender: '권나영 주임', initials: '권', email: 'nykwon@amore.com', subject: 'Re: eBook 다운로드 감사합니다', preview: '보내주신 eBook 자료 잘 받았습니다. 추가 질문이 있어 문의드립니다...', date: '3/21', unread: false, starred: false },
+  { sender: '장민석 과장', initials: '장', email: 'msjang@hana.com', subject: '간접구매 비용 절감 세미나 참석 확인', preview: '다음 주 세미나 참석 신청을 확인합니다. 주차 관련 안내 부탁드립니다.', date: '3/20', unread: false, starred: false },
+];
+
+const listEl = document.getElementById('emailList');
+emails.forEach((e, i) => {
+  const div = document.createElement('div');
+  div.className = 'email-item' + (e.unread ? ' unread' : '') + (i === 0 ? ' active' : '');
+  div.innerHTML = `
+    <div class="email-avatar">${e.initials}</div>
+    <div class="email-content">
+      <div class="email-top">
+        <span class="email-sender">${e.sender}</span>
+        <span class="email-date">${e.date}</span>
+      </div>
+      <div class="email-subject">${e.subject}</div>
+      <div class="email-preview">${e.preview}</div>
+    </div>
+    <span class="email-star ${e.starred ? 'starred' : ''}">${e.starred ? '★' : '☆'}</span>
+  `;
+  div.addEventListener('click', function() {
+    document.querySelectorAll('.email-item').forEach(el => el.classList.remove('active'));
+    div.classList.add('active');
+  });
+  listEl.appendChild(div);
+});
+
+// Filter buttons
+document.querySelectorAll('.filters button').forEach(btn => {
+  btn.addEventListener('click', function() {
+    document.querySelectorAll('.filters button').forEach(b => b.classList.remove('active'));
+    this.classList.add('active');
+  });
+});
+
+// Sidebar folder click
+document.querySelectorAll('.folder').forEach(f => {
+  f.addEventListener('click', function() {
+    document.querySelectorAll('.folder').forEach(el => el.classList.remove('active'));
+    this.classList.add('active');
+  });
+});
+</script>
+</body>
+</html>

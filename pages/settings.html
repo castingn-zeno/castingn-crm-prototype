@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>캐스팅엔 CRM - 회사 설정</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #F0F9FF; color: #1E293B; height: 100vh; display: flex; flex-direction: column; }
+
+.topbar { background: #1A2332; color: #fff; padding: 14px 24px; display: flex; align-items: center; gap: 16px; }
+.topbar h1 { font-size: 18px; font-weight: 600; }
+.topbar .breadcrumb { font-size: 13px; color: rgba(255,255,255,0.5); }
+.topbar .breadcrumb span { color: rgba(255,255,255,0.8); }
+
+.main { display: flex; flex: 1; overflow: hidden; }
+
+/* Object Sidebar */
+.sidebar { width: 240px; background: #fff; border-right: 1px solid #E2E8F0; padding: 16px 0; overflow-y: auto; flex-shrink: 0; }
+.sidebar-label { font-size: 11px; color: #64748B; padding: 8px 20px 6px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
+.sidebar-item { padding: 9px 20px; font-size: 13px; color: #1E293B; cursor: pointer; display: flex; align-items: center; gap: 10px; transition: background .1s; }
+.sidebar-item:hover { background: #F0F9FF; }
+.sidebar-item.active { background: #E0F2FE; color: #0891B2; font-weight: 600; }
+.sidebar-item .icon { width: 20px; text-align: center; font-size: 14px; }
+.sidebar-divider { height: 1px; background: #E2E8F0; margin: 12px 16px; }
+.sidebar-item .obj-count { font-size: 11px; color: #94A3B8; margin-left: auto; }
+
+/* Content */
+.content { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+
+/* Tabs */
+.tab-bar { display: flex; gap: 0; padding: 0 24px; background: #fff; border-bottom: 2px solid #E2E8F0; }
+.tab { padding: 12px 18px; font-size: 13px; color: #64748B; cursor: pointer; border-bottom: 2px solid transparent; margin-bottom: -2px; transition: all .15s; font-weight: 500; white-space: nowrap; }
+.tab:hover { color: #1E293B; }
+.tab.active { color: #0891B2; border-bottom-color: #0891B2; font-weight: 600; }
+
+/* Field content */
+.field-content { flex: 1; padding: 24px; overflow-y: auto; }
+.field-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+.field-header h2 { font-size: 16px; font-weight: 600; }
+.btn-add { padding: 8px 16px; background: #0891B2; color: #fff; border: none; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; }
+.btn-add:hover { background: #0e7490; }
+.search-box { padding: 8px 14px; border: 1px solid #E2E8F0; border-radius: 8px; font-size: 13px; width: 240px; outline: none; background: #fff; margin-right: 12px; }
+.search-box:focus { border-color: #0891B2; box-shadow: 0 0 0 3px rgba(8,145,178,0.1); }
+
+.table-wrap { background: #fff; border-radius: 12px; border: 1px solid #E2E8F0; overflow: hidden; }
+table { width: 100%; border-collapse: collapse; }
+thead th { padding: 11px 16px; text-align: left; font-size: 12px; font-weight: 600; color: #64748B; background: #F8FAFC; border-bottom: 1px solid #E2E8F0; white-space: nowrap; }
+tbody td { padding: 12px 16px; font-size: 13px; border-bottom: 1px solid #F1F5F9; }
+tbody tr:last-child td { border-bottom: none; }
+tbody tr:hover { background: #F8FAFC; }
+
+.field-name { font-weight: 600; color: #1A2332; display: flex; align-items: center; gap: 8px; }
+.field-name .lock { font-size: 11px; color: #94A3B8; }
+.type-badge { font-size: 11px; padding: 3px 10px; border-radius: 6px; font-weight: 500; display: inline-block; }
+.type-text { background: #E0F2FE; color: #0891B2; }
+.type-bool { background: #FEF3C7; color: #D97706; }
+.type-team { background: #EDE9FE; color: #7C3AED; }
+.type-webform { background: #D1FAE5; color: #059669; }
+.type-date { background: #FFE4E6; color: #E11D48; }
+.type-number { background: #DBEAFE; color: #2563EB; }
+.type-select { background: #FEE2E2; color: #DC2626; }
+.type-jsonb { background: #F3F4F6; color: #4B5563; }
+
+.required-badge { font-size: 11px; padding: 2px 8px; border-radius: 4px; }
+.required-badge.yes { background: #FEE2E2; color: #DC2626; font-weight: 600; }
+.required-badge.no { background: #F1F5F9; color: #94A3B8; }
+
+.creator { font-size: 12px; color: #64748B; }
+.creator.system { color: #0891B2; font-weight: 500; }
+
+/* Footer */
+.field-footer { padding: 14px 24px; background: #fff; border-top: 1px solid #E2E8F0; display: flex; justify-content: space-between; align-items: center; font-size: 13px; color: #64748B; }
+.field-usage { display: flex; align-items: center; gap: 8px; }
+.usage-bar { width: 120px; height: 6px; background: #E2E8F0; border-radius: 3px; overflow: hidden; }
+.usage-bar-fill { height: 100%; background: #0891B2; border-radius: 3px; width: 4%; }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <h1>회사 설정</h1>
+  <div class="breadcrumb">설정 > <span>오브젝트 관리</span></div>
+</div>
+
+<div class="main">
+  <!-- Object Sidebar -->
+  <div class="sidebar">
+    <div class="sidebar-label">기본 오브젝트</div>
+    <div class="sidebar-item active"><span class="icon">👤</span>고객<span class="obj-count">45필드</span></div>
+    <div class="sidebar-item"><span class="icon">💰</span>딜<span class="obj-count">32필드</span></div>
+    <div class="sidebar-item"><span class="icon">🎯</span>리드<span class="obj-count">28필드</span></div>
+    <div class="sidebar-item"><span class="icon">🏢</span>회사<span class="obj-count">22필드</span></div>
+    <div class="sidebar-item"><span class="icon">📄</span>견적서<span class="obj-count">18필드</span></div>
+    <div class="sidebar-item"><span class="icon">📦</span>상품<span class="obj-count">15필드</span></div>
+    <div class="sidebar-item"><span class="icon">🔀</span>상품 변형<span class="obj-count">12필드</span></div>
+    <div class="sidebar-item"><span class="icon">📝</span>노트<span class="obj-count">8필드</span></div>
+    <div class="sidebar-item"><span class="icon">✅</span>TODO<span class="obj-count">10필드</span></div>
+    <div class="sidebar-divider"></div>
+    <div class="sidebar-label">커스텀 오브젝트</div>
+    <div class="sidebar-item"><span class="icon">⚙️</span>프로젝트<span class="obj-count">14필드</span></div>
+    <div class="sidebar-item"><span class="icon">⚙️</span>파트너사<span class="obj-count">9필드</span></div>
+    <div class="sidebar-item" style="color:#0891B2; font-size:12px; margin-top:4px;"><span class="icon">+</span>커스텀 오브젝트 추가</div>
+  </div>
+
+  <div class="content">
+    <!-- Tabs -->
+    <div class="tab-bar">
+      <div class="tab active">필드 관리</div>
+      <div class="tab">관계 설정</div>
+      <div class="tab">기록 관리</div>
+      <div class="tab">상세 화면 관리</div>
+      <div class="tab">미리보기 관리</div>
+      <div class="tab">생성 화면 관리</div>
+    </div>
+
+    <div class="field-content">
+      <div class="field-header">
+        <h2>고객 필드 <span style="color:#64748B; font-weight:400; font-size:14px;">(45개)</span></h2>
+        <div style="display:flex; align-items:center;">
+          <input type="text" class="search-box" placeholder="필드 검색...">
+          <button class="btn-add">+ 필드 생성</button>
+        </div>
+      </div>
+
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th style="width:40px;"><input type="checkbox"></th>
+              <th>필드 이름</th>
+              <th>유형</th>
+              <th>필수</th>
+              <th>생성자</th>
+              <th style="width:60px;"></th>
+            </tr>
+          </thead>
+          <tbody id="fieldBody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="field-footer">
+      <span>총 고객 필드 <strong>45</strong>개</span>
+      <div class="field-usage">
+        <span>커스텀 필드: <strong>4</strong> / 100개</span>
+        <div class="usage-bar"><div class="usage-bar-fill"></div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const fields = [
+  { name: '이름', type: '텍스트', typeClass: 'type-text', required: true, creator: '시스템', system: true, lock: true },
+  { name: '이메일', type: '텍스트', typeClass: 'type-text', required: true, creator: '시스템', system: true, lock: true },
+  { name: '전화번호', type: '텍스트', typeClass: 'type-text', required: false, creator: '시스템', system: true, lock: true },
+  { name: '회사명', type: '텍스트', typeClass: 'type-text', required: false, creator: '시스템', system: true, lock: true },
+  { name: '직책', type: '텍스트', typeClass: 'type-text', required: false, creator: '시스템', system: true, lock: false },
+  { name: '마케팅 수신 동의', type: 'True / False', typeClass: 'type-bool', required: false, creator: '시스템', system: true, lock: false },
+  { name: '담당 영업팀', type: '팀 (복수)', typeClass: 'type-team', required: false, creator: '시스템', system: true, lock: false },
+  { name: '유입 웹폼', type: '웹폼 (단일)', typeClass: 'type-webform', required: false, creator: '시스템', system: true, lock: false },
+  { name: '최초 접촉일', type: '날짜 (시간)', typeClass: 'type-date', required: false, creator: '시스템', system: true, lock: false },
+  { name: '최근 활동일', type: '날짜 (시간)', typeClass: 'type-date', required: false, creator: '시스템', system: true, lock: false },
+  { name: '리드 스코어', type: '숫자', typeClass: 'type-number', required: false, creator: '시스템', system: true, lock: false },
+  { name: '고객 등급', type: '선택목록', typeClass: 'type-select', required: false, creator: '시스템', system: true, lock: false },
+  { name: '고객 상태', type: '선택목록', typeClass: 'type-select', required: true, creator: '시스템', system: true, lock: false },
+  { name: '산업군', type: '선택목록', typeClass: 'type-select', required: false, creator: '시스템', system: true, lock: false },
+  { name: '회사 규모', type: '선택목록', typeClass: 'type-select', required: false, creator: '시스템', system: true, lock: false },
+  { name: '연매출', type: '숫자', typeClass: 'type-number', required: false, creator: '시스템', system: true, lock: false },
+  { name: '임직원 수', type: '숫자', typeClass: 'type-number', required: false, creator: '시스템', system: true, lock: false },
+  { name: 'UTM 소스', type: '텍스트', typeClass: 'type-text', required: false, creator: '시스템', system: true, lock: false },
+  { name: 'UTM 미디엄', type: '텍스트', typeClass: 'type-text', required: false, creator: '시스템', system: true, lock: false },
+  { name: 'UTM 캠페인', type: '텍스트', typeClass: 'type-text', required: false, creator: '시스템', system: true, lock: false },
+  { name: '특이사항 메모', type: 'JSONB', typeClass: 'type-jsonb', required: false, creator: '박민지', system: false, lock: false },
+  { name: '예상 계약 규모', type: '숫자', typeClass: 'type-number', required: false, creator: '이준호', system: false, lock: false },
+  { name: '경쟁사 사용 여부', type: 'True / False', typeClass: 'type-bool', required: false, creator: '김하늘', system: false, lock: false },
+  { name: '내부 메모', type: 'JSONB', typeClass: 'type-jsonb', required: false, creator: '박민지', system: false, lock: false },
+];
+
+const body = document.getElementById('fieldBody');
+fields.forEach(f => {
+  const tr = document.createElement('tr');
+  tr.innerHTML = `
+    <td><input type="checkbox"></td>
+    <td>
+      <div class="field-name">
+        ${f.name}
+        ${f.lock ? '<span class="lock">🔒</span>' : ''}
+      </div>
+    </td>
+    <td><span class="type-badge ${f.typeClass}">${f.type}</span></td>
+    <td><span class="required-badge ${f.required ? 'yes' : 'no'}">${f.required ? '필수' : '선택'}</span></td>
+    <td><span class="creator ${f.system ? 'system' : ''}">${f.creator}</span></td>
+    <td style="text-align:center;">
+      <span style="cursor:pointer; color:#94A3B8; font-size:16px;">⋯</span>
+    </td>
+  `;
+  body.appendChild(tr);
+});
+
+// Tab clicks
+document.querySelectorAll('.tab').forEach(t => {
+  t.addEventListener('click', function() {
+    document.querySelectorAll('.tab').forEach(el => el.classList.remove('active'));
+    this.classList.add('active');
+  });
+});
+
+// Sidebar clicks
+document.querySelectorAll('.sidebar-item').forEach(item => {
+  item.addEventListener('click', function() {
+    document.querySelectorAll('.sidebar-item').forEach(el => el.classList.remove('active'));
+    this.classList.add('active');
+  });
+});
+</script>
+</body>
+</html>

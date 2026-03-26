@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>캐스팅엔 CRM - 웹 폼</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #F0F9FF; color: #1E293B; min-height: 100vh; }
+
+.topbar { background: #1A2332; color: #fff; padding: 14px 24px; display: flex; align-items: center; gap: 16px; }
+.topbar h1 { font-size: 18px; font-weight: 600; }
+.topbar .btn-create { margin-left: auto; padding: 8px 18px; background: #0891B2; color: #fff; border: none; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; }
+.topbar .btn-create:hover { background: #0e7490; }
+
+.content { padding: 24px; max-width: 1280px; margin: 0 auto; }
+.content-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; }
+.content-header h2 { font-size: 16px; font-weight: 600; color: #1A2332; }
+.header-right { display: flex; gap: 12px; align-items: center; }
+.search-box { padding: 8px 14px; border: 1px solid #E2E8F0; border-radius: 8px; font-size: 13px; width: 240px; outline: none; background: #fff; }
+.search-box:focus { border-color: #0891B2; box-shadow: 0 0 0 3px rgba(8,145,178,0.1); }
+.view-toggle { display: flex; border: 1px solid #E2E8F0; border-radius: 8px; overflow: hidden; }
+.view-toggle button { padding: 6px 12px; border: none; background: #fff; color: #64748B; font-size: 13px; cursor: pointer; }
+.view-toggle button.active { background: #0891B2; color: #fff; }
+
+/* Card Grid */
+.card-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
+@media (max-width: 1000px) { .card-grid { grid-template-columns: repeat(2, 1fr); } }
+
+.card { background: #fff; border-radius: 12px; border: 1px solid #E2E8F0; overflow: hidden; transition: box-shadow .2s, transform .15s; cursor: pointer; }
+.card:hover { box-shadow: 0 8px 24px rgba(0,0,0,0.08); transform: translateY(-2px); }
+
+.card-thumb { height: 140px; background: linear-gradient(135deg, #E0F2FE 0%, #BAE6FD 100%); display: flex; align-items: center; justify-content: center; position: relative; }
+.card-thumb-icon { font-size: 40px; opacity: 0.4; }
+.card-status { position: absolute; top: 12px; right: 12px; font-size: 11px; padding: 3px 10px; border-radius: 20px; font-weight: 600; }
+.card-status.active { background: rgba(16,185,129,0.15); color: #059669; }
+.card-status.inactive { background: rgba(239,68,68,0.1); color: #EF4444; }
+.utm-badge { position: absolute; top: 12px; left: 12px; font-size: 10px; padding: 3px 8px; border-radius: 4px; font-weight: 600; }
+.utm-badge.on { background: rgba(8,145,178,0.15); color: #0891B2; }
+.utm-badge.off { background: rgba(100,116,139,0.1); color: #64748B; }
+
+.card-body { padding: 18px; }
+.card-title { font-size: 15px; font-weight: 700; color: #1A2332; margin-bottom: 12px; }
+
+.card-stats { display: flex; gap: 16px; margin-bottom: 14px; }
+.card-stat { text-align: center; flex: 1; }
+.card-stat-value { font-size: 20px; font-weight: 700; color: #1A2332; }
+.card-stat-label { font-size: 11px; color: #64748B; margin-top: 2px; }
+
+.card-chart { height: 48px; display: flex; align-items: flex-end; gap: 3px; padding: 0 4px; }
+.chart-bar { flex: 1; background: #0891B2; border-radius: 3px 3px 0 0; min-height: 4px; transition: height .3s; opacity: 0.7; }
+.chart-bar:hover { opacity: 1; }
+.chart-label { display: flex; justify-content: space-between; font-size: 10px; color: #94A3B8; margin-top: 4px; padding: 0 4px; }
+
+.card-footer { padding: 12px 18px; border-top: 1px solid #F1F5F9; display: flex; justify-content: space-between; align-items: center; }
+.card-footer-date { font-size: 11px; color: #94A3B8; }
+.card-footer-actions { display: flex; gap: 8px; }
+.card-footer-actions button { padding: 4px 10px; border: 1px solid #E2E8F0; border-radius: 6px; background: #fff; font-size: 11px; color: #64748B; cursor: pointer; }
+.card-footer-actions button:hover { background: #F8FAFC; color: #1E293B; }
+
+/* Summary bar */
+.summary-bar { display: flex; gap: 16px; margin-bottom: 24px; }
+.summary-card { background: #fff; border: 1px solid #E2E8F0; border-radius: 10px; padding: 16px 20px; flex: 1; }
+.summary-card .label { font-size: 12px; color: #64748B; margin-bottom: 4px; }
+.summary-card .value { font-size: 22px; font-weight: 700; color: #1A2332; }
+.summary-card .change { font-size: 12px; color: #10B981; margin-top: 2px; }
+.summary-card .change.down { color: #EF4444; }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <h1>웹 폼</h1>
+  <button class="btn-create">+ 웹 폼 생성</button>
+</div>
+
+<div class="content">
+  <!-- Summary -->
+  <div class="summary-bar">
+    <div class="summary-card">
+      <div class="label">전체 폼</div>
+      <div class="value">8</div>
+    </div>
+    <div class="summary-card">
+      <div class="label">총 제출 수</div>
+      <div class="value">1,714</div>
+      <div class="change">+12.3% 전월 대비</div>
+    </div>
+    <div class="summary-card">
+      <div class="label">평균 전환율</div>
+      <div class="value">4.8%</div>
+      <div class="change">+0.6% 전월 대비</div>
+    </div>
+    <div class="summary-card">
+      <div class="label">활성 폼</div>
+      <div class="value">6</div>
+    </div>
+  </div>
+
+  <div class="content-header">
+    <h2>웹 폼 목록</h2>
+    <div class="header-right">
+      <input type="text" class="search-box" placeholder="폼 검색...">
+    </div>
+  </div>
+
+  <div class="card-grid" id="cardGrid"></div>
+</div>
+
+<script>
+const forms = [
+  { name: '도입 문의 폼', submissions: 342, rate: 5.2, active: true, utm: true, chart: [8,12,15,10,18,22,14] },
+  { name: '소개서 신청', submissions: 187, rate: 3.8, active: true, utm: true, chart: [5,7,9,6,11,8,10] },
+  { name: '데모 요청', submissions: 94, rate: 7.1, active: true, utm: true, chart: [3,4,2,5,6,4,3] },
+  { name: '뉴스레터 구독', submissions: 523, rate: 2.4, active: true, utm: false, chart: [18,22,25,20,28,30,24] },
+  { name: 'eBook 다운로드', submissions: 278, rate: 6.3, active: true, utm: true, chart: [10,14,12,16,18,15,20] },
+  { name: '세미나 신청', submissions: 156, rate: 4.5, active: true, utm: true, chart: [6,8,5,10,12,9,7] },
+  { name: '견적 요청', submissions: 89, rate: 8.9, active: false, utm: false, chart: [2,3,1,4,2,3,1] },
+  { name: '파트너 제안', submissions: 45, rate: 3.1, active: false, utm: false, chart: [1,2,1,3,2,1,2] },
+];
+
+const grid = document.getElementById('cardGrid');
+const days = ['월','화','수','목','금','토','일'];
+
+forms.forEach(f => {
+  const maxVal = Math.max(...f.chart);
+  const bars = f.chart.map(v => {
+    const h = Math.max(4, (v / maxVal) * 44);
+    return `<div class="chart-bar" style="height:${h}px;" title="${v}건"></div>`;
+  }).join('');
+
+  const card = document.createElement('div');
+  card.className = 'card';
+  card.innerHTML = `
+    <div class="card-thumb">
+      <span class="card-thumb-icon">📋</span>
+      <span class="card-status ${f.active ? 'active' : 'inactive'}">${f.active ? '활성' : '비활성'}</span>
+      <span class="utm-badge ${f.utm ? 'on' : 'off'}">UTM ${f.utm ? 'ON' : 'OFF'}</span>
+    </div>
+    <div class="card-body">
+      <div class="card-title">${f.name}</div>
+      <div class="card-stats">
+        <div class="card-stat">
+          <div class="card-stat-value">${f.submissions.toLocaleString()}</div>
+          <div class="card-stat-label">제출 수</div>
+        </div>
+        <div class="card-stat">
+          <div class="card-stat-value">${f.rate}%</div>
+          <div class="card-stat-label">전환율</div>
+        </div>
+      </div>
+      <div style="font-size:11px; color:#64748B; margin-bottom:6px;">최근 7일 제출 추이</div>
+      <div class="card-chart">${bars}</div>
+      <div class="chart-label">${days.map(d => `<span>${d}</span>`).join('')}</div>
+    </div>
+    <div class="card-footer">
+      <span class="card-footer-date">생성: 2026.01.15</span>
+      <div class="card-footer-actions">
+        <button>미리보기</button>
+        <button>편집</button>
+        <button>복제</button>
+      </div>
+    </div>
+  `;
+  grid.appendChild(card);
+});
+</script>
+</body>
+</html>

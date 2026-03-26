@@ -1,0 +1,563 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>캐스팅엔 CRM - 리드 관리</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  :root {
+    --navy: #1A2332;
+    --teal: #0891B2;
+    --amber: #F59E0B;
+    --bg: #F0F9FF;
+    --slate: #1E293B;
+    --gray: #64748B;
+    --sidebar-w: 240px;
+  }
+  body { font-family: system-ui, -apple-system, sans-serif; background: var(--bg); color: var(--slate); display: flex; height: 100vh; overflow: hidden; }
+
+  /* ── Sidebar ── */
+  .sidebar {
+    width: var(--sidebar-w); min-width: var(--sidebar-w);
+    background: var(--navy); color: #CBD5E1;
+    display: flex; flex-direction: column; overflow-y: auto;
+    scrollbar-width: thin; scrollbar-color: #334155 transparent;
+  }
+  .sidebar::-webkit-scrollbar { width: 5px; }
+  .sidebar::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
+  .sidebar-logo { padding: 20px 16px 16px; display: flex; align-items: center; gap: 10px; border-bottom: 1px solid #2D3B4E; }
+  .sidebar-logo .logo-icon { width: 32px; height: 32px; background: linear-gradient(135deg, var(--teal), #06B6D4); border-radius: 8px; display: flex; align-items: center; justify-content: center; }
+  .sidebar-logo .logo-icon svg { width: 18px; height: 18px; }
+  .sidebar-logo span { font-size: 15px; font-weight: 700; color: #F1F5F9; }
+  .sidebar-nav { padding: 8px 0; flex: 1; }
+  .nav-section { margin-bottom: 2px; }
+  .nav-item { display: flex; align-items: center; gap: 10px; padding: 9px 16px; font-size: 13px; cursor: pointer; transition: all 0.15s; color: #94A3B8; position: relative; user-select: none; }
+  .nav-item:hover { background: rgba(255,255,255,0.06); color: #E2E8F0; }
+  .nav-item.active { background: rgba(8,145,178,0.15); color: #22D3EE; }
+  .nav-item.active::before { content: ''; position: absolute; left: 0; top: 50%; transform: translateY(-50%); width: 3px; height: 24px; background: var(--teal); border-radius: 0 3px 3px 0; }
+  .nav-item svg { width: 18px; height: 18px; flex-shrink: 0; opacity: 0.7; }
+  .nav-item.active svg { opacity: 1; }
+  .nav-item .label { flex: 1; }
+  .nav-item .chevron { width: 16px; height: 16px; transition: transform 0.2s; opacity: 0.5; }
+  .nav-item .chevron.open { transform: rotate(90deg); }
+  .sub-menu { max-height: 0; overflow: hidden; transition: max-height 0.25s ease; }
+  .sub-menu.open { max-height: 600px; }
+  .sub-item { display: block; padding: 7px 16px 7px 44px; font-size: 12.5px; color: #64748B; cursor: pointer; transition: all 0.15s; text-decoration: none; }
+  .sub-item:hover { color: #CBD5E1; background: rgba(255,255,255,0.04); }
+  .sub-item.active { color: #22D3EE; }
+
+  /* ── Main ── */
+  .main { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+
+  /* ── Page Header ── */
+  .page-header { background: #fff; border-bottom: 1px solid #E2E8F0; padding: 0 24px; flex-shrink: 0; }
+  .page-header-top { display: flex; align-items: center; gap: 16px; padding: 16px 0 0; }
+  .page-title { font-size: 20px; font-weight: 700; color: var(--slate); }
+  .page-header-actions { margin-left: auto; display: flex; align-items: center; gap: 8px; }
+  .btn { display: inline-flex; align-items: center; gap: 6px; padding: 8px 16px; border-radius: 8px; font-size: 13px; font-weight: 500; cursor: pointer; border: none; transition: all 0.15s; }
+  .btn-primary { background: var(--teal); color: #fff; }
+  .btn-primary:hover { background: #0E7490; }
+  .btn svg { width: 16px; height: 16px; }
+  .view-count { font-size: 12px; color: var(--gray); background: #F1F5F9; padding: 4px 10px; border-radius: 6px; }
+
+  .page-tabs { display: flex; gap: 0; margin-top: 12px; }
+  .page-tab { padding: 10px 16px; font-size: 13px; color: var(--gray); cursor: pointer; border-bottom: 2px solid transparent; transition: all 0.15s; white-space: nowrap; }
+  .page-tab:hover { color: var(--slate); }
+  .page-tab.active { color: var(--teal); border-bottom-color: var(--teal); font-weight: 600; }
+  .page-tab .tab-count { font-size: 11px; background: #F1F5F9; padding: 1px 6px; border-radius: 8px; margin-left: 4px; color: var(--gray); }
+
+  /* ── Filter Bar ── */
+  .filter-bar { display: flex; align-items: center; gap: 8px; padding: 12px 24px; background: #fff; border-bottom: 1px solid #E2E8F0; flex-shrink: 0; }
+  .filter-chip { display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; border-radius: 6px; font-size: 12px; color: var(--slate); background: #F8FAFC; border: 1px solid #E2E8F0; cursor: pointer; transition: all 0.15s; white-space: nowrap; }
+  .filter-chip:hover { border-color: var(--teal); background: #F0F9FF; }
+  .filter-chip svg { width: 14px; height: 14px; color: var(--gray); }
+  .filter-chip .val { color: var(--teal); font-weight: 500; }
+  .filter-divider { width: 1px; height: 24px; background: #E2E8F0; }
+  .filter-spacer { flex: 1; }
+
+  /* ── Table ── */
+  .table-wrapper { flex: 1; overflow: auto; }
+  .lead-table { width: 100%; border-collapse: collapse; font-size: 13px; min-width: 1200px; }
+  .lead-table thead { position: sticky; top: 0; background: #F8FAFC; z-index: 2; }
+  .lead-table th {
+    text-align: left; padding: 10px 14px; font-weight: 600;
+    color: var(--gray); font-size: 11.5px; border-bottom: 1px solid #E2E8F0;
+    white-space: nowrap; text-transform: uppercase; letter-spacing: 0.3px;
+  }
+  .lead-table td { padding: 11px 14px; border-bottom: 1px solid #F1F5F9; white-space: nowrap; }
+  .lead-table tbody tr { cursor: pointer; transition: background 0.1s; }
+  .lead-table tbody tr:hover { background: #F8FAFC; }
+  .lead-table th:first-child, .lead-table td:first-child { width: 40px; text-align: center; }
+
+  /* Status badges */
+  .status-badge {
+    display: inline-block; padding: 3px 10px; border-radius: 12px;
+    font-size: 11px; font-weight: 600; letter-spacing: 0.2px;
+  }
+  .status-mql { background: #DBEAFE; color: #1D4ED8; }
+  .status-sql { background: #DCFCE7; color: #15803D; }
+  .status-sal { background: #EDE9FE; color: #7C3AED; }
+  .status-new { background: #F1F5F9; color: #64748B; }
+  .status-nurturing { background: #FEF3C7; color: #B45309; }
+
+  /* Score bar */
+  .score-cell { display: flex; align-items: center; gap: 8px; }
+  .score-num { font-weight: 700; font-size: 13px; min-width: 24px; }
+  .score-bar-bg { width: 48px; height: 6px; background: #E2E8F0; border-radius: 3px; overflow: hidden; }
+  .score-bar { height: 100%; border-radius: 3px; transition: width 0.3s; }
+  .score-high { background: #EF4444; }
+  .score-mid { background: #F59E0B; }
+  .score-teal { background: #0891B2; }
+  .score-low { background: #94A3B8; }
+
+  /* Source tag */
+  .source-tag {
+    display: inline-block; padding: 2px 8px; border-radius: 4px;
+    font-size: 11px; font-weight: 500;
+  }
+  .source-webform { background: #DBEAFE; color: #1D4ED8; }
+  .source-signup { background: #DCFCE7; color: #15803D; }
+  .source-channel { background: #FEF3C7; color: #B45309; }
+  .source-event { background: #EDE9FE; color: #7C3AED; }
+  .source-intro { background: #FCE7F3; color: #BE185D; }
+  .source-demo { background: #ECFDF5; color: #059669; }
+
+  /* Category */
+  .cat-badge {
+    display: inline-flex; align-items: center; gap: 4px;
+    font-size: 11px; font-weight: 500; color: var(--gray);
+  }
+  .cat-badge svg { width: 12px; height: 12px; }
+
+  /* Assignee avatar */
+  .assignee-cell { display: flex; align-items: center; gap: 6px; }
+  .mini-avatar {
+    width: 22px; height: 22px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 9px; font-weight: 700; color: #fff; flex-shrink: 0;
+  }
+
+  /* ── Pagination ── */
+  .pagination-bar {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 12px 24px; background: #fff; border-top: 1px solid #E2E8F0; flex-shrink: 0;
+    font-size: 13px;
+  }
+  .pagination-left { display: flex; align-items: center; gap: 16px; color: var(--gray); }
+  .pagination-left select {
+    padding: 4px 8px; border: 1px solid #E2E8F0; border-radius: 6px;
+    font-size: 12px; background: #fff; color: var(--slate); outline: none;
+  }
+  .pagination-center { display: flex; align-items: center; gap: 4px; }
+  .page-btn {
+    width: 32px; height: 32px; border: 1px solid #E2E8F0; background: #fff;
+    border-radius: 6px; cursor: pointer; display: flex;
+    align-items: center; justify-content: center; color: var(--gray);
+    font-size: 13px; transition: all 0.15s;
+  }
+  .page-btn:hover { border-color: var(--teal); color: var(--teal); }
+  .page-btn.active { background: var(--teal); color: #fff; border-color: var(--teal); }
+  .page-btn:disabled { opacity: 0.4; cursor: default; }
+  .page-btn svg { width: 16px; height: 16px; }
+  .pagination-right { color: var(--gray); font-size: 12px; }
+  .pagination-right strong { color: var(--slate); font-weight: 700; }
+
+  /* ── Slide Panel ── */
+  .slide-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.3); z-index: 100; }
+  .slide-overlay.open { display: block; }
+  .slide-panel {
+    position: fixed; right: -560px; top: 0; bottom: 0;
+    width: 560px; background: #fff; z-index: 101;
+    box-shadow: -4px 0 24px rgba(0,0,0,0.12);
+    transition: right 0.3s ease; overflow-y: auto;
+  }
+  .slide-panel.open { right: 0; }
+  .panel-header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 20px 24px; border-bottom: 1px solid #E2E8F0;
+    position: sticky; top: 0; background: #fff; z-index: 2;
+  }
+  .panel-header h3 { font-size: 16px; font-weight: 700; }
+  .panel-close {
+    width: 32px; height: 32px; border: none; background: #F1F5F9;
+    border-radius: 8px; cursor: pointer; display: flex;
+    align-items: center; justify-content: center; color: var(--gray);
+  }
+  .panel-close:hover { background: #E2E8F0; }
+  .panel-body { padding: 24px; }
+
+  /* Score Cards */
+  .score-cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 24px; }
+  .score-card {
+    background: #F8FAFC; border-radius: 10px; padding: 16px; text-align: center;
+    border: 1px solid #E2E8F0;
+  }
+  .score-card-label { font-size: 11px; color: var(--gray); font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px; }
+  .score-card-value { font-size: 28px; font-weight: 800; margin-bottom: 8px; }
+  .score-card-bar { height: 6px; background: #E2E8F0; border-radius: 3px; overflow: hidden; }
+  .score-card-fill { height: 100%; border-radius: 3px; }
+
+  .panel-section { margin-bottom: 24px; }
+  .panel-section-title { font-size: 12px; font-weight: 600; color: var(--gray); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 12px; }
+  .panel-field { display: flex; margin-bottom: 10px; }
+  .panel-label { width: 110px; font-size: 13px; color: var(--gray); flex-shrink: 0; padding-top: 2px; }
+  .panel-value { font-size: 13px; color: var(--slate); font-weight: 500; }
+
+  .panel-timeline { border-left: 2px solid #E2E8F0; padding-left: 16px; }
+  .timeline-item { position: relative; padding-bottom: 16px; }
+  .timeline-item::before {
+    content: ''; position: absolute; left: -21px; top: 4px;
+    width: 10px; height: 10px; border-radius: 50%;
+    border: 2px solid #fff;
+  }
+  .timeline-item.tl-email::before { background: #6366F1; }
+  .timeline-item.tl-page::before { background: #0891B2; }
+  .timeline-item.tl-form::before { background: #059669; }
+  .timeline-item.tl-system::before { background: #94A3B8; }
+  .timeline-date { font-size: 11px; color: #94A3B8; margin-bottom: 2px; }
+  .timeline-text { font-size: 13px; color: var(--slate); }
+  .timeline-detail { font-size: 11px; color: var(--gray); margin-top: 2px; }
+</style>
+</head>
+<body>
+
+<!-- Sidebar -->
+<aside class="sidebar">
+  <div class="sidebar-logo">
+    <div class="logo-icon"><svg fill="none" viewBox="0 0 24 24" stroke="#fff" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg></div>
+    <span>캐스팅엔 CRM</span>
+  </div>
+  <nav class="sidebar-nav">
+    <div class="nav-section"><div class="nav-item"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M4 5a1 1 0 011-1h4a1 1 0 011 1v5a1 1 0 01-1 1H5a1 1 0 01-1-1V5zm10 0a1 1 0 011-1h4a1 1 0 011 1v2a1 1 0 01-1 1h-4a1 1 0 01-1-1V5z"/></svg><span class="label">대시보드</span></div></div>
+    <div class="nav-section">
+      <div class="nav-item active"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M11 5.882V19.24a1.76 1.76 0 01-3.417.592l-2.147-6.15M18 13a3 3 0 100-6M5.436 13.683A4.001 4.001 0 017 6h1.832c4.1 0 7.625-1.234 9.168-3v14c-1.543-1.766-5.067-3-9.168-3H7a3.988 3.988 0 01-1.564-.317z"/></svg><span class="label">마케팅</span><svg class="chevron open" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg></div>
+      <div class="sub-menu open">
+        <a class="sub-item active">리드</a><a class="sub-item">리드 그룹</a><a class="sub-item">웹 폼</a><a class="sub-item">문서</a>
+      </div>
+    </div>
+    <div class="nav-section"><div class="nav-item"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg><span class="label">세일즈</span></div></div>
+    <div class="nav-section"><div class="nav-item"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/></svg><span class="label">컨택</span></div></div>
+    <div class="nav-section"><div class="nav-item"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg><span class="label">이메일</span></div></div>
+    <div class="nav-section"><div class="nav-item"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg><span class="label">일정 관리</span></div></div>
+  </nav>
+</aside>
+
+<!-- Main -->
+<div class="main">
+  <!-- Page Header -->
+  <div class="page-header">
+    <div class="page-header-top">
+      <h1 class="page-title">리드</h1>
+      <div class="page-header-actions">
+        <span class="view-count">3/20</span>
+        <button class="btn btn-primary">
+          <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/></svg>
+          리드 생성
+        </button>
+      </div>
+    </div>
+    <div class="page-tabs">
+      <div class="page-tab active">전체 리드<span class="tab-count">4,556</span></div>
+      <div class="page-tab">개인 리드<span class="tab-count">2,891</span></div>
+      <div class="page-tab">기업 리드<span class="tab-count">1,665</span></div>
+      <div class="page-tab">MQL<span class="tab-count">842</span></div>
+      <div class="page-tab">SQL<span class="tab-count">367</span></div>
+    </div>
+  </div>
+
+  <!-- Filter Bar -->
+  <div class="filter-bar">
+    <div class="filter-chip">
+      <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/></svg>
+      파이프라인 <span class="val">기본</span>
+    </div>
+    <div class="filter-chip">
+      <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"/></svg>
+      필터
+    </div>
+    <div class="filter-chip">
+      <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 17V7m0 10a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h2a2 2 0 012 2m0 10a2 2 0 002 2h2a2 2 0 002-2M9 7a2 2 0 012-2h2a2 2 0 012 2"/></svg>
+      컬럼 설정
+    </div>
+    <div class="filter-spacer"></div>
+    <div class="filter-chip">
+      <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+      전체 다운로드
+    </div>
+  </div>
+
+  <!-- Table -->
+  <div class="table-wrapper">
+    <table class="lead-table">
+      <thead>
+        <tr>
+          <th><input type="checkbox" id="selectAll"></th>
+          <th>상태</th>
+          <th>스코어</th>
+          <th>카테고리</th>
+          <th>이름</th>
+          <th>회사</th>
+          <th>소스</th>
+          <th>UTM</th>
+          <th>담당자</th>
+          <th>생성날짜</th>
+        </tr>
+      </thead>
+      <tbody id="leadTableBody"></tbody>
+    </table>
+  </div>
+
+  <!-- Pagination -->
+  <div class="pagination-bar">
+    <div class="pagination-left">
+      페이지당
+      <select><option>250</option><option>100</option><option>50</option></select>
+    </div>
+    <div class="pagination-center">
+      <button class="page-btn" disabled><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/></svg></button>
+      <button class="page-btn active">1</button>
+      <button class="page-btn">2</button>
+      <button class="page-btn">3</button>
+      <span style="color:var(--gray);padding:0 4px">...</span>
+      <button class="page-btn">19</button>
+      <button class="page-btn"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg></button>
+    </div>
+    <div class="pagination-right">
+      총 리드 <strong>4,556</strong>개 &nbsp;|&nbsp; <strong>125,580,000</strong>원
+    </div>
+  </div>
+
+  <!-- Slide Panel -->
+  <div class="slide-overlay" id="slideOverlay"></div>
+  <div class="slide-panel" id="slidePanel">
+    <div class="panel-header">
+      <h3 id="panelTitle">리드 상세</h3>
+      <button class="panel-close" id="panelClose">
+        <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+      </button>
+    </div>
+    <div class="panel-body" id="panelBody"></div>
+  </div>
+</div>
+
+<script>
+const statuses = ['MQL','SQL','SAL','New','Nurturing'];
+const statusClasses = ['status-mql','status-sql','status-sal','status-new','status-nurturing'];
+const categories = ['기업','개인'];
+const sources = ['웹폼','신규가입','채널톡','이벤트','소개서요청','데모신청'];
+const sourceClasses = ['source-webform','source-signup','source-channel','source-event','source-intro','source-demo'];
+const utms = ['google_ads','naver_blog','linkedin','facebook','organic','referral','newsletter','webinar','conference','direct'];
+const assignees = ['유제욱','박경재','김서영','이하은','정민수','오지훈','한소희'];
+const avatarColors = ['#6366F1','#0891B2','#D97706','#DC2626','#059669','#8B5CF6','#EC4899'];
+const firstNames = ['김민수','이서연','박지훈','최수아','정현우','강예린','조동현','윤하나','장태양','임보라','송준혁','한미래','오세진','류다은','배성호','신지민','문현정','홍승우','양서윤','권도윤','남유진','전시우','고은서','서민재','구하윤','노준영','채원빈','하지호','봉미선','안태희'];
+const companies = ['네이버','카카오','쿠팡','토스','배달의민족','당근마켓','라인','삼성SDS','LG CNS','현대오토에버','SK텔레콤','KT','마이리얼트립','야놀자','무신사','두나무','비바리퍼블리카','리디','왓챠','숭실대학교','한양대학교','세종대학교','마켓컬리','오늘의집','직방','크래프톤','넷마블','엔씨소프트','카카오엔터','하이브'];
+
+function rnd(arr) { return arr[Math.floor(Math.random()*arr.length)]; }
+function rndInt(min,max) { return Math.floor(Math.random()*(max-min+1))+min; }
+function rndDate() {
+  const y = 2025 + Math.floor(Math.random()*2);
+  const m = rndInt(1,12); const d = rndInt(1,28);
+  return `${y}-${String(m).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+}
+
+function scoreColor(s) {
+  if (s >= 70) return 'score-high';
+  if (s >= 40) return 'score-mid';
+  if (s >= 20) return 'score-teal';
+  return 'score-low';
+}
+function scoreColorHex(s) {
+  if (s >= 70) return '#EF4444';
+  if (s >= 40) return '#F59E0B';
+  if (s >= 20) return '#0891B2';
+  return '#94A3B8';
+}
+
+const leads = [];
+for (let i = 0; i < 35; i++) {
+  const sIdx = Math.floor(Math.random()*statuses.length);
+  const catIdx = Math.floor(Math.random()*categories.length);
+  const srcIdx = Math.floor(Math.random()*sources.length);
+  const aIdx = Math.floor(Math.random()*assignees.length);
+  const fit = rndInt(5,95);
+  const engagement = rndInt(5,95);
+  const total = Math.round((fit*0.4 + engagement*0.6));
+  leads.push({
+    id: i,
+    status: statuses[sIdx],
+    statusClass: statusClasses[sIdx],
+    score: total,
+    fitScore: fit,
+    engScore: engagement,
+    category: categories[catIdx],
+    name: firstNames[i % firstNames.length],
+    company: rnd(companies),
+    source: sources[srcIdx],
+    sourceClass: sourceClasses[srcIdx],
+    utm: rnd(utms),
+    assignee: assignees[aIdx],
+    assigneeColor: avatarColors[aIdx],
+    date: rndDate()
+  });
+}
+
+function renderTable() {
+  const tbody = document.getElementById('leadTableBody');
+  tbody.innerHTML = leads.map(l => `
+    <tr onclick="openPanel(${l.id})">
+      <td><input type="checkbox" onclick="event.stopPropagation()"></td>
+      <td><span class="status-badge ${l.statusClass}">${l.status}</span></td>
+      <td>
+        <div class="score-cell">
+          <span class="score-num" style="color:${scoreColorHex(l.score)}">${l.score}</span>
+          <div class="score-bar-bg"><div class="score-bar ${scoreColor(l.score)}" style="width:${l.score}%"></div></div>
+        </div>
+      </td>
+      <td>
+        <span class="cat-badge">
+          ${l.category === '기업' ?
+            '<svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5"/></svg>' :
+            '<svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>'
+          }
+          ${l.category}
+        </span>
+      </td>
+      <td style="font-weight:600;color:var(--slate)">${l.name}</td>
+      <td>${l.company}</td>
+      <td><span class="source-tag ${l.sourceClass}">${l.source}</span></td>
+      <td style="color:var(--gray);font-size:11px">${l.utm}</td>
+      <td>
+        <div class="assignee-cell">
+          <div class="mini-avatar" style="background:${l.assigneeColor}">${l.assignee[0]}</div>
+          ${l.assignee}
+        </div>
+      </td>
+      <td style="color:var(--gray)">${l.date}</td>
+    </tr>
+  `).join('');
+}
+
+function openPanel(id) {
+  const l = leads.find(x => x.id === id);
+  if (!l) return;
+  document.getElementById('panelTitle').textContent = l.name;
+
+  const fitColor = scoreColorHex(l.fitScore);
+  const engColor = scoreColorHex(l.engScore);
+  const totalColor = scoreColorHex(l.score);
+
+  document.getElementById('panelBody').innerHTML = `
+    <div class="score-cards">
+      <div class="score-card">
+        <div class="score-card-label">Fit Score</div>
+        <div class="score-card-value" style="color:${fitColor}">${l.fitScore}</div>
+        <div class="score-card-bar"><div class="score-card-fill" style="width:${l.fitScore}%;background:${fitColor}"></div></div>
+      </div>
+      <div class="score-card">
+        <div class="score-card-label">Engagement</div>
+        <div class="score-card-value" style="color:${engColor}">${l.engScore}</div>
+        <div class="score-card-bar"><div class="score-card-fill" style="width:${l.engScore}%;background:${engColor}"></div></div>
+      </div>
+      <div class="score-card">
+        <div class="score-card-label">Total Score</div>
+        <div class="score-card-value" style="color:${totalColor}">${l.score}</div>
+        <div class="score-card-bar"><div class="score-card-fill" style="width:${l.score}%;background:${totalColor}"></div></div>
+      </div>
+    </div>
+
+    <div class="panel-section">
+      <div class="panel-section-title">기본 정보</div>
+      <div class="panel-field"><div class="panel-label">이름</div><div class="panel-value">${l.name}</div></div>
+      <div class="panel-field"><div class="panel-label">상태</div><div class="panel-value"><span class="status-badge ${l.statusClass}">${l.status}</span></div></div>
+      <div class="panel-field"><div class="panel-label">카테고리</div><div class="panel-value">${l.category}</div></div>
+      <div class="panel-field"><div class="panel-label">소스</div><div class="panel-value"><span class="source-tag ${l.sourceClass}">${l.source}</span></div></div>
+      <div class="panel-field"><div class="panel-label">UTM</div><div class="panel-value">${l.utm}</div></div>
+      <div class="panel-field"><div class="panel-label">담당자</div><div class="panel-value">${l.assignee}</div></div>
+      <div class="panel-field"><div class="panel-label">생성날짜</div><div class="panel-value">${l.date}</div></div>
+    </div>
+
+    <div class="panel-section">
+      <div class="panel-section-title">회사 정보</div>
+      <div class="panel-field"><div class="panel-label">회사명</div><div class="panel-value">${l.company}</div></div>
+      <div class="panel-field"><div class="panel-label">산업</div><div class="panel-value">${rnd(['IT/소프트웨어','금융','커머스','교육','엔터테인먼트','제조','헬스케어'])}</div></div>
+      <div class="panel-field"><div class="panel-label">직원수</div><div class="panel-value">${rnd(['10-50명','50-200명','200-1000명','1000명+'])}</div></div>
+      <div class="panel-field"><div class="panel-label">매출규모</div><div class="panel-value">${rnd(['10억 미만','10-50억','50-200억','200억+'])}</div></div>
+    </div>
+
+    <div class="panel-section">
+      <div class="panel-section-title">활동 타임라인</div>
+      <div class="panel-timeline">
+        <div class="timeline-item tl-page">
+          <div class="timeline-date">2026-03-25 16:42</div>
+          <div class="timeline-text">가격 페이지 방문</div>
+          <div class="timeline-detail">pricing 페이지에서 3분 22초 체류</div>
+        </div>
+        <div class="timeline-item tl-email">
+          <div class="timeline-date">2026-03-24 10:15</div>
+          <div class="timeline-text">이메일 오픈 - [캐스팅엔] 무료 체험 안내</div>
+          <div class="timeline-detail">오픈 2회, 클릭 1회</div>
+        </div>
+        <div class="timeline-item tl-form">
+          <div class="timeline-date">2026-03-22 14:30</div>
+          <div class="timeline-text">${l.source} 통해 리드 유입</div>
+          <div class="timeline-detail">UTM: ${l.utm}</div>
+        </div>
+        <div class="timeline-item tl-page">
+          <div class="timeline-date">2026-03-20 09:05</div>
+          <div class="timeline-text">블로그 포스트 방문</div>
+          <div class="timeline-detail">"B2B SaaS 세일즈 자동화 가이드" 5분 48초 체류</div>
+        </div>
+        <div class="timeline-item tl-system">
+          <div class="timeline-date">${l.date} 00:00</div>
+          <div class="timeline-text">리드 생성됨</div>
+          <div class="timeline-detail">${l.assignee}에게 자동 배정</div>
+        </div>
+      </div>
+    </div>
+  `;
+  document.getElementById('slideOverlay').classList.add('open');
+  document.getElementById('slidePanel').classList.add('open');
+}
+
+function closePanel() {
+  document.getElementById('slideOverlay').classList.remove('open');
+  document.getElementById('slidePanel').classList.remove('open');
+}
+document.getElementById('slideOverlay').addEventListener('click', closePanel);
+document.getElementById('panelClose').addEventListener('click', closePanel);
+
+// Tab switching
+document.querySelectorAll('.page-tab').forEach(tab => {
+  tab.addEventListener('click', () => {
+    document.querySelectorAll('.page-tab').forEach(t => t.classList.remove('active'));
+    tab.classList.add('active');
+  });
+});
+
+// Page buttons
+document.querySelectorAll('.page-btn:not(:disabled)').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.page-btn').forEach(b => b.classList.remove('active'));
+    if (!btn.querySelector('svg')) btn.classList.add('active');
+  });
+});
+
+// Sidebar accordion
+document.querySelectorAll('.nav-item').forEach(item => {
+  item.addEventListener('click', () => {
+    const chevron = item.querySelector('.chevron');
+    const subMenu = item.parentElement.querySelector('.sub-menu');
+    if (chevron && subMenu) { chevron.classList.toggle('open'); subMenu.classList.toggle('open'); }
+  });
+});
+
+// Select all checkbox
+document.getElementById('selectAll').addEventListener('change', function() {
+  document.querySelectorAll('.lead-table tbody input[type="checkbox"]').forEach(cb => cb.checked = this.checked);
+});
+
+renderTable();
+</script>
+</body>
+</html>

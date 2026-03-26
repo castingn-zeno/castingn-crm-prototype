@@ -1,0 +1,589 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CastingN CRM - 프로토타입</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --navy:#1A2332;--teal:#0891B2;--tealL:#06B6D4;--amber:#F59E0B;--amberL:#FCD34D;
+  --bg:#F0F9FF;--wh:#FFFFFF;--sl:#1E293B;--gy:#64748B;--lg:#E2E8F0;--gn:#10B981;
+  --rd:#EF4444;--pr:#8B5CF6;--or:#F97316;--sidebar:240px;
+}
+body{font-family:'Pretendard',system-ui,-apple-system,sans-serif;background:var(--bg);color:var(--sl);display:flex;height:100vh;overflow:hidden}
+/* Sidebar */
+.sidebar{width:var(--sidebar);background:var(--navy);color:var(--wh);display:flex;flex-direction:column;flex-shrink:0;overflow-y:auto}
+.sidebar-logo{padding:20px 16px;display:flex;align-items:center;gap:10px;border-bottom:1px solid rgba(255,255,255,.08)}
+.sidebar-logo svg{width:28px;height:28px;color:var(--teal)}
+.sidebar-logo span{font-size:15px;font-weight:700;color:var(--wh)}
+.sidebar-logo small{font-size:10px;color:var(--gy);display:block}
+.nav-section{padding:16px 0 4px 16px;font-size:10px;text-transform:uppercase;letter-spacing:1px;color:var(--gy)}
+.nav-item{display:flex;align-items:center;gap:10px;padding:9px 16px;cursor:pointer;transition:all .15s;font-size:13px;color:rgba(255,255,255,.7);border-left:3px solid transparent}
+.nav-item:hover{background:rgba(255,255,255,.05);color:var(--wh)}
+.nav-item.active{background:rgba(8,145,178,.15);color:var(--tealL);border-left-color:var(--teal)}
+.nav-item svg{width:18px;height:18px;flex-shrink:0;opacity:.6}
+.nav-item.active svg{opacity:1}
+.nav-sub{padding-left:44px;font-size:12px;color:rgba(255,255,255,.5);padding-top:4px;padding-bottom:4px;cursor:pointer}
+.nav-sub:hover,.nav-sub.active{color:var(--tealL)}
+/* Main */
+.main{flex:1;display:flex;flex-direction:column;overflow:hidden}
+.topbar{height:56px;background:var(--wh);border-bottom:1px solid var(--lg);display:flex;align-items:center;padding:0 24px;gap:16px;flex-shrink:0}
+.topbar-title{font-size:18px;font-weight:700;color:var(--sl)}
+.topbar-search{flex:1;max-width:400px;margin-left:auto}
+.topbar-search input{width:100%;padding:8px 12px 8px 36px;border:1px solid var(--lg);border-radius:8px;font-size:13px;background:var(--bg);outline:none}
+.topbar-search input:focus{border-color:var(--teal);box-shadow:0 0 0 3px rgba(8,145,178,.1)}
+.topbar-actions{display:flex;gap:8px;align-items:center}
+.topbar-btn{padding:7px 14px;border-radius:8px;font-size:12px;font-weight:600;border:none;cursor:pointer;transition:all .15s}
+.btn-primary{background:var(--teal);color:var(--wh)}.btn-primary:hover{background:#0e7490}
+.btn-outline{background:var(--wh);color:var(--sl);border:1px solid var(--lg)}.btn-outline:hover{background:var(--bg)}
+.content{flex:1;overflow-y:auto;padding:0}
+/* Tabs */
+.tabs{display:flex;gap:0;padding:0 24px;background:var(--wh);border-bottom:1px solid var(--lg)}
+.tab{padding:12px 16px;font-size:13px;color:var(--gy);cursor:pointer;border-bottom:2px solid transparent;font-weight:500;transition:all .15s}
+.tab:hover{color:var(--sl)}
+.tab.active{color:var(--teal);border-bottom-color:var(--teal);font-weight:600}
+/* Pipeline Kanban */
+.pipeline-bar{display:flex;align-items:center;gap:12px;padding:12px 24px;background:var(--wh);border-bottom:1px solid var(--lg)}
+.pipeline-bar select{padding:6px 10px;border:1px solid var(--lg);border-radius:6px;font-size:12px;background:var(--wh)}
+.filter-btn{display:flex;align-items:center;gap:4px;padding:6px 12px;border:1px solid var(--lg);border-radius:6px;font-size:12px;cursor:pointer;background:var(--wh);color:var(--gy)}
+.kanban{display:flex;gap:0;padding:16px;overflow-x:auto;flex:1;align-items:flex-start}
+.kanban-col{min-width:280px;max-width:300px;flex-shrink:0;margin-right:8px}
+.kanban-header{padding:10px 12px;border-radius:8px 8px 0 0;display:flex;align-items:center;justify-content:space-between}
+.kanban-header-title{font-size:13px;font-weight:700;color:var(--wh)}
+.kanban-header-count{font-size:11px;background:rgba(255,255,255,.2);padding:2px 8px;border-radius:10px;color:var(--wh)}
+.kanban-header-amount{font-size:11px;color:rgba(255,255,255,.7);margin-top:2px}
+.kanban-cards{padding:8px;background:rgba(0,0,0,.02);border-radius:0 0 8px 8px;min-height:200px;display:flex;flex-direction:column;gap:8px}
+.deal-card{background:var(--wh);border-radius:8px;padding:14px;cursor:pointer;transition:all .15s;border:1px solid var(--lg);position:relative}
+.deal-card:hover{box-shadow:0 4px 12px rgba(0,0,0,.08);transform:translateY(-1px)}
+.deal-card-title{font-size:13px;font-weight:600;color:var(--sl);margin-bottom:6px}
+.deal-card-company{font-size:11px;color:var(--gy);margin-bottom:8px;display:flex;align-items:center;gap:4px}
+.deal-card-amount{font-size:16px;font-weight:700;color:var(--sl);margin-bottom:8px}
+.deal-card-meta{display:flex;flex-wrap:wrap;gap:6px}
+.deal-tag{font-size:10px;padding:2px 8px;border-radius:4px;font-weight:500}
+.tag-prob{background:#FEF3C7;color:#92400E}.tag-amount{background:#DBEAFE;color:#1E40AF}
+.tag-date{background:#F3E8FF;color:#6B21A8}.tag-owner{background:#ECFDF5;color:#065F46}
+.deal-card-alert{position:absolute;top:10px;right:10px;width:10px;height:10px;border-radius:50%;background:var(--rd)}
+/* Lead List */
+.lead-table-wrap{padding:16px 24px}
+table{width:100%;border-collapse:collapse;font-size:13px}
+thead th{text-align:left;padding:10px 12px;font-weight:600;color:var(--gy);font-size:11px;text-transform:uppercase;letter-spacing:.5px;border-bottom:2px solid var(--lg);background:var(--wh);position:sticky;top:0}
+tbody td{padding:10px 12px;border-bottom:1px solid #F1F5F9}
+tbody tr:hover{background:#F8FAFC}
+.status-badge{display:inline-block;padding:3px 10px;border-radius:12px;font-size:11px;font-weight:600}
+.status-mql{background:#DBEAFE;color:#1E40AF}.status-sql{background:#FEE2E2;color:#991B1B}
+.status-sal{background:#FEF3C7;color:#92400E}.status-new{background:#F1F5F9;color:#475569}
+.status-nurturing{background:#F3E8FF;color:#6B21A8}
+.score-bar{width:60px;height:6px;background:var(--lg);border-radius:3px;overflow:hidden;display:inline-block;vertical-align:middle;margin-left:6px}
+.score-fill{height:100%;border-radius:3px}
+.source-badge{font-size:11px;padding:2px 8px;border-radius:4px;background:#F0FDF4;color:#166534;font-weight:500}
+/* Dashboard */
+.dashboard-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;padding:20px 24px}
+.dash-card{background:var(--wh);border-radius:12px;padding:20px;border:1px solid var(--lg)}
+.dash-card-title{font-size:12px;color:var(--gy);font-weight:600;margin-bottom:12px;text-transform:uppercase;letter-spacing:.5px}
+.dash-card-value{font-size:32px;font-weight:800;margin-bottom:4px}
+.dash-card-sub{font-size:12px;color:var(--gy)}
+.dash-card-change{font-size:12px;font-weight:600;margin-left:8px}
+.change-up{color:var(--gn)}.change-down{color:var(--rd)}
+.kpi-row{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;padding:20px 24px 0}
+.kpi-card{background:var(--wh);border-radius:12px;padding:16px;border:1px solid var(--lg);text-align:center}
+.kpi-num{font-size:28px;font-weight:800;margin:8px 0 4px}
+.kpi-label{font-size:11px;color:var(--gy);font-weight:500}
+.chart-placeholder{height:200px;background:linear-gradient(135deg,#F0F9FF,#E0F2FE);border-radius:8px;display:flex;align-items:center;justify-content:center;color:var(--teal);font-size:13px;margin-top:12px;position:relative;overflow:hidden}
+.chart-bars{display:flex;align-items:flex-end;gap:8px;height:160px;padding:0 20px}
+.chart-bar{flex:1;border-radius:4px 4px 0 0;transition:height .5s ease;min-width:20px}
+.chart-bar:hover{opacity:.8}
+.chart-line{position:absolute;bottom:30px;left:20px;right:20px;height:2px;background:var(--teal);opacity:.3}
+/* Lead detail panel */
+.detail-overlay{position:fixed;top:0;right:0;width:480px;height:100%;background:var(--wh);box-shadow:-4px 0 24px rgba(0,0,0,.1);z-index:100;transform:translateX(100%);transition:transform .3s ease;overflow-y:auto;display:flex;flex-direction:column}
+.detail-overlay.open{transform:translateX(0)}
+.detail-header{padding:20px;border-bottom:1px solid var(--lg);display:flex;justify-content:space-between;align-items:flex-start}
+.detail-close{width:32px;height:32px;border-radius:8px;border:1px solid var(--lg);display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:18px;background:var(--wh)}
+.detail-close:hover{background:var(--bg)}
+.detail-body{padding:20px;flex:1}
+.detail-section{margin-bottom:20px}
+.detail-section-title{font-size:11px;text-transform:uppercase;letter-spacing:1px;color:var(--gy);font-weight:600;margin-bottom:10px;padding-bottom:6px;border-bottom:1px solid var(--lg)}
+.detail-field{display:flex;justify-content:space-between;padding:6px 0;font-size:13px}
+.detail-field-label{color:var(--gy)}
+.detail-field-value{font-weight:500;color:var(--sl)}
+.detail-score{display:flex;gap:12px;margin-bottom:16px}
+.score-card{flex:1;padding:12px;border-radius:8px;text-align:center}
+.score-card-num{font-size:24px;font-weight:800}
+.score-card-label{font-size:10px;margin-top:4px}
+.timeline{border-left:2px solid var(--lg);padding-left:16px;margin-top:12px}
+.timeline-item{margin-bottom:16px;position:relative}
+.timeline-item::before{content:'';width:8px;height:8px;border-radius:50%;background:var(--teal);position:absolute;left:-21px;top:4px}
+.timeline-date{font-size:10px;color:var(--gy)}
+.timeline-text{font-size:12px;color:var(--sl);margin-top:2px}
+/* Views */
+.view-section{display:none}.view-section.active{display:flex;flex-direction:column;flex:1;overflow:hidden}
+/* Responsive adjustments */
+.pipeline-stats{display:flex;gap:6px;align-items:center}
+.stat-total{font-size:12px;color:var(--gy);margin-left:auto;padding-right:8px}
+</style>
+</head>
+<body>
+
+<!-- SIDEBAR -->
+<nav class="sidebar">
+  <div class="sidebar-logo">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+    <div><span>업무마켓9</span><small>CRM</small></div>
+  </div>
+
+  <div class="nav-section">마케팅</div>
+  <div class="nav-item" data-view="leads" onclick="switchView('leads')">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87m-4-12a4 4 0 010 7.75"/></svg>
+    리드
+  </div>
+  <div class="nav-sub" onclick="switchView('leads')">리드 그룹</div>
+  <div class="nav-sub" onclick="switchView('leads')">웹 폼</div>
+
+  <div class="nav-section">세일즈</div>
+  <div class="nav-item active" data-view="pipeline" onclick="switchView('pipeline')">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 3v18m6-18v18M3 9h18M3 15h18"/></svg>
+    딜
+  </div>
+  <div class="nav-sub">상품</div>
+  <div class="nav-sub">견적서</div>
+
+  <div class="nav-section">연락처</div>
+  <div class="nav-item" data-view="contacts" onclick="switchView('contacts')">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+    고객
+  </div>
+  <div class="nav-sub">회사</div>
+  <div class="nav-sub">고객 그룹</div>
+
+  <div class="nav-section">자동화</div>
+  <div class="nav-item" onclick="switchView('pipeline')">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
+    시퀀스
+  </div>
+  <div class="nav-item" onclick="switchView('pipeline')">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+    워크플로우
+  </div>
+
+  <div class="nav-section">커뮤니케이션</div>
+  <div class="nav-item" onclick="switchView('pipeline')">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+    이메일
+  </div>
+  <div class="nav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg> 문자 메시지</div>
+  <div class="nav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07 19.5 19.5 0 01-6-6 19.79 19.79 0 01-3.07-8.67A2 2 0 014.11 2h3a2 2 0 012 1.72 12.84 12.84 0 00.7 2.81 2 2 0 01-.45 2.11L8.09 9.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45 12.84 12.84 0 002.81.7A2 2 0 0122 16.92z"/></svg> 알림톡</div>
+
+  <div class="nav-section">분석</div>
+  <div class="nav-item" data-view="dashboard" onclick="switchView('dashboard')">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 20V10M12 20V4M6 20v-6"/></svg>
+    대시보드
+  </div>
+  <div class="nav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg> 일정 관리</div>
+  <div class="nav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg> 노트</div>
+</nav>
+
+<!-- MAIN -->
+<div class="main">
+
+  <!-- ===== VIEW: PIPELINE ===== -->
+  <div class="view-section active" id="view-pipeline">
+    <div class="topbar">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--teal)" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/></svg>
+      <span class="topbar-title">딜</span>
+      <div class="tabs" style="border:0;background:transparent;padding:0">
+        <div class="tab active">모든 딜</div>
+        <div class="tab">진행중인 딜</div>
+        <div class="tab">유제욱 팀장</div>
+        <div class="tab">박경재 파트장</div>
+      </div>
+      <span class="stat-total">총 딜 326개 &nbsp;|&nbsp; 총 38,221,900,325원</span>
+      <button class="topbar-btn btn-primary" onclick="alert('딜 생성 모달')">+ 딜 생성</button>
+    </div>
+    <div class="pipeline-bar">
+      <select><option>전체 파이프라인</option></select>
+      <select><option>유제욱 팀장</option><option>전체 담당자</option></select>
+      <div class="filter-btn">↕ 정렬</div>
+      <div class="filter-btn">≡ 필터 0</div>
+      <div class="filter-btn">⚙ 카드 설정</div>
+    </div>
+    <div class="kanban" id="kanban"></div>
+  </div>
+
+  <!-- ===== VIEW: LEADS ===== -->
+  <div class="view-section" id="view-leads">
+    <div class="topbar">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--teal)" stroke-width="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
+      <span class="topbar-title">리드</span>
+      <div class="tabs" style="border:0;background:transparent;padding:0">
+        <div class="tab active">전체 리드</div>
+        <div class="tab">MQL</div>
+        <div class="tab">SQL</div>
+        <div class="tab">Nurturing</div>
+      </div>
+      <span class="stat-total">총 리드 4,556개 &nbsp;|&nbsp; 125,580,000원</span>
+      <button class="topbar-btn btn-primary">+ 리드 생성</button>
+    </div>
+    <div class="pipeline-bar">
+      <select><option>전체 파이프라인</option></select>
+      <div class="filter-btn">≡ 필터 0</div>
+      <div class="filter-btn">⚙ 컬럼 설정</div>
+      <div style="margin-left:auto" class="filter-btn">↓ 전체 다운로드</div>
+    </div>
+    <div style="flex:1;overflow-y:auto">
+      <div class="lead-table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th><input type="checkbox"></th>
+              <th>상태</th>
+              <th>스코어</th>
+              <th>이름</th>
+              <th>회사</th>
+              <th>소스</th>
+              <th>담당자</th>
+              <th>생성 날짜</th>
+            </tr>
+          </thead>
+          <tbody id="lead-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== VIEW: CONTACTS ===== -->
+  <div class="view-section" id="view-contacts">
+    <div class="topbar">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--teal)" stroke-width="2"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+      <span class="topbar-title">고객</span>
+      <div class="tabs" style="border:0;background:transparent;padding:0">
+        <div class="tab active">전체 고객</div>
+      </div>
+      <span class="stat-total">총 고객 5,060명</span>
+      <button class="topbar-btn btn-primary">+ 고객 생성</button>
+    </div>
+    <div style="flex:1;overflow-y:auto">
+      <div class="lead-table-wrap">
+        <table>
+          <thead><tr><th><input type="checkbox"></th><th>이름</th><th>이메일</th><th>전화</th><th>포지션</th><th>직급</th><th>회사</th></tr></thead>
+          <tbody id="contact-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== VIEW: DASHBOARD ===== -->
+  <div class="view-section" id="view-dashboard">
+    <div class="topbar">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--teal)" stroke-width="2"><path d="M18 20V10M12 20V4M6 20v-6"/></svg>
+      <span class="topbar-title">마케팅 대시보드</span>
+      <div class="tabs" style="border:0;background:transparent;padding:0">
+        <div class="tab active">마케팅</div>
+        <div class="tab">세일즈</div>
+        <div class="tab">경영진 (IPO)</div>
+      </div>
+      <button class="topbar-btn btn-outline">이번달</button>
+      <button class="topbar-btn btn-outline">이번분기</button>
+      <button class="topbar-btn btn-primary">+ 차트 추가</button>
+    </div>
+    <div style="flex:1;overflow-y:auto">
+      <div class="kpi-row">
+        <div class="kpi-card"><div class="kpi-label">신규 리드</div><div class="kpi-num" style="color:var(--teal)">247</div><div class="kpi-label"><span class="change-up">+18%</span> vs 전월</div></div>
+        <div class="kpi-card"><div class="kpi-label">MQL 전환율</div><div class="kpi-num" style="color:var(--amber)">34.2%</div><div class="kpi-label"><span class="change-up">+5.1%p</span> vs 전월</div></div>
+        <div class="kpi-card"><div class="kpi-label">이메일 오픈율</div><div class="kpi-num" style="color:var(--pr)">28.7%</div><div class="kpi-label"><span class="change-down">-2.3%p</span> vs 전월</div></div>
+        <div class="kpi-card"><div class="kpi-label">CAC</div><div class="kpi-num" style="color:var(--gn)">47만</div><div class="kpi-label"><span class="change-up">-12%</span> vs 전월</div></div>
+      </div>
+      <div class="dashboard-grid">
+        <div class="dash-card">
+          <div class="dash-card-title">리드 소스별 유입량</div>
+          <div class="chart-bars" id="chart-source"></div>
+        </div>
+        <div class="dash-card">
+          <div class="dash-card-title">리드 → MQL 전환율 추이</div>
+          <div class="chart-placeholder"><svg width="90%" height="80%" viewBox="0 0 300 120"><polyline points="10,100 50,80 100,85 150,60 200,45 250,30 290,25" fill="none" stroke="#0891B2" stroke-width="3"/><polyline points="10,100 50,90 100,70 150,65 200,50 250,40 290,35" fill="none" stroke="#F59E0B" stroke-width="2" stroke-dasharray="5,5"/></svg></div>
+        </div>
+        <div class="dash-card">
+          <div class="dash-card-title">PLG 퍼널 (Free → Pro)</div>
+          <div style="padding:12px 0">
+            <div style="margin-bottom:8px"><div style="display:flex;justify-content:space-between;font-size:11px;margin-bottom:4px"><span>Free 가입</span><span style="font-weight:700">1,240</span></div><div style="height:24px;background:var(--teal);border-radius:4px;width:100%"></div></div>
+            <div style="margin-bottom:8px"><div style="display:flex;justify-content:space-between;font-size:11px;margin-bottom:4px"><span>Activation</span><span style="font-weight:700">680</span></div><div style="height:24px;background:var(--tealL);border-radius:4px;width:55%"></div></div>
+            <div style="margin-bottom:8px"><div style="display:flex;justify-content:space-between;font-size:11px;margin-bottom:4px"><span>Pro 관심</span><span style="font-weight:700">210</span></div><div style="height:24px;background:var(--amber);border-radius:4px;width:17%"></div></div>
+            <div><div style="display:flex;justify-content:space-between;font-size:11px;margin-bottom:4px"><span>Pro 전환</span><span style="font-weight:700;color:var(--gn)">89</span></div><div style="height:24px;background:var(--gn);border-radius:4px;width:7%"></div></div>
+          </div>
+        </div>
+        <div class="dash-card" style="grid-column:span 2">
+          <div class="dash-card-title">파이프라인 현황</div>
+          <div style="display:flex;gap:12px;margin-top:8px" id="pipeline-summary"></div>
+        </div>
+        <div class="dash-card">
+          <div class="dash-card-title">Win/Loss 분석</div>
+          <div style="padding:16px 0;text-align:center">
+            <svg width="140" height="140" viewBox="0 0 140 140">
+              <circle cx="70" cy="70" r="55" fill="none" stroke="#E2E8F0" stroke-width="20"/>
+              <circle cx="70" cy="70" r="55" fill="none" stroke="#10B981" stroke-width="20" stroke-dasharray="207 139" stroke-dashoffset="0" transform="rotate(-90 70 70)"/>
+              <circle cx="70" cy="70" r="55" fill="none" stroke="#EF4444" stroke-width="20" stroke-dasharray="69.3 276.3" stroke-dashoffset="-207" transform="rotate(-90 70 70)"/>
+              <text x="70" y="66" text-anchor="middle" font-size="20" font-weight="800" fill="#1E293B">60%</text>
+              <text x="70" y="82" text-anchor="middle" font-size="10" fill="#64748B">승률</text>
+            </svg>
+            <div style="display:flex;justify-content:center;gap:16px;margin-top:8px;font-size:11px">
+              <span><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--gn);margin-right:4px"></span>Won 60%</span>
+              <span><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--rd);margin-right:4px"></span>Lost 20%</span>
+              <span><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--lg);margin-right:4px"></span>진행중 20%</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- DETAIL PANEL -->
+<div class="detail-overlay" id="detail-panel">
+  <div class="detail-header">
+    <div>
+      <div style="font-size:18px;font-weight:700" id="detail-name">-</div>
+      <div style="font-size:12px;color:var(--gy);margin-top:4px" id="detail-company">-</div>
+    </div>
+    <div class="detail-close" onclick="closeDetail()">&times;</div>
+  </div>
+  <div class="detail-body">
+    <div class="detail-score">
+      <div class="score-card" style="background:#F0FDFA">
+        <div class="score-card-num" style="color:var(--teal)" id="detail-fit">32</div>
+        <div class="score-card-label" style="color:var(--teal)">Fit Score</div>
+      </div>
+      <div class="score-card" style="background:#FFFBEB">
+        <div class="score-card-num" style="color:var(--amber)" id="detail-eng">45</div>
+        <div class="score-card-label" style="color:var(--amber)">Engagement</div>
+      </div>
+      <div class="score-card" style="background:#F0F9FF">
+        <div class="score-card-num" style="color:var(--pr)" id="detail-total">77</div>
+        <div class="score-card-label" style="color:var(--pr)">Total Score</div>
+      </div>
+    </div>
+    <div class="detail-section">
+      <div class="detail-section-title">기본 정보</div>
+      <div class="detail-field"><span class="detail-field-label">상태</span><span class="detail-field-value" id="detail-status">MQL</span></div>
+      <div class="detail-field"><span class="detail-field-label">이메일</span><span class="detail-field-value" id="detail-email">-</span></div>
+      <div class="detail-field"><span class="detail-field-label">전화</span><span class="detail-field-value" id="detail-phone">-</span></div>
+      <div class="detail-field"><span class="detail-field-label">소스</span><span class="detail-field-value" id="detail-source">웹 폼</span></div>
+      <div class="detail-field"><span class="detail-field-label">담당자</span><span class="detail-field-value" id="detail-owner">-</span></div>
+    </div>
+    <div class="detail-section">
+      <div class="detail-section-title">회사 정보</div>
+      <div class="detail-field"><span class="detail-field-label">직원 수</span><span class="detail-field-value" id="detail-emp">-</span></div>
+      <div class="detail-field"><span class="detail-field-label">지점 수</span><span class="detail-field-value" id="detail-branch">-</span></div>
+      <div class="detail-field"><span class="detail-field-label">업종</span><span class="detail-field-value" id="detail-industry">-</span></div>
+      <div class="detail-field"><span class="detail-field-label">Tier</span><span class="detail-field-value" id="detail-tier">-</span></div>
+    </div>
+    <div class="detail-section">
+      <div class="detail-section-title">활동 타임라인</div>
+      <div class="timeline" id="detail-timeline"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+// === DATA ===
+const stages = [
+  { id:'lead', name:'리드 인입', color:'#94A3B8', count:238, amount:'21.9억' },
+  { id:'mql', name:'MQL', color:'#0891B2', count:42, amount:'8.4억' },
+  { id:'sal', name:'SAL', color:'#0891B2', count:12, amount:'4.2억' },
+  { id:'sql', name:'SQL/미팅예정', color:'#F59E0B', count:7, amount:'18억' },
+  { id:'discovery', name:'Discovery', color:'#F59E0B', count:22, amount:'251억' },
+  { id:'proposal', name:'Proposal', color:'#F97316', count:3, amount:'12억' },
+  { id:'negotiation', name:'협상', color:'#F97316', count:2, amount:'8.5억' },
+];
+
+const companies = ['위편','(주)아미코젠','42dot','주식회사 메디퀘터스','GC녹십자','미스토 코리아','나이스엔지니어링','(사)보험연수원','한전FMS','버킷플레이스','(주)에이테크오토모','애그리로보텍','세아네트웍스','칼레스타에너지','런던베이글'];
+const names = ['박종섭','백상운','박경덕','황수현','이호정','이진희','김태우','정민수','오정희','유제욱','최준영','한서연','강민호','이수빈','박지영'];
+const owners = ['유제욱','박경재','오정희','업무마켓9 매니저'];
+const probs = ['D+','C+','B+','A+','B','C','A'];
+const sources = ['웹 폼','신규가입','채널톡','이벤트','소개서 요청','데모 신청'];
+const statuses = ['new','mql','sal','sql','nurturing'];
+const industries = ['프랜차이즈','유통','제조','IT','서비스','병원','교육'];
+const positions = ['경영지원부문 인사팀','경영기획실','총무팀','구매팀','경영지원','인사총무팀','경영'];
+const ranks = ['팀장','대리','과장','사원','이사','부장'];
+
+function rand(arr){return arr[Math.floor(Math.random()*arr.length)]}
+function randNum(min,max){return Math.floor(Math.random()*(max-min+1))+min}
+function randAmount(){const v=randNum(1,100);return v<30?randNum(1,5)+'백만원 이하':v<60?'5백만원 ~ 1천만원':v<85?'1천만원 ~ 5천만원':'5천만원 이상'}
+function formatWon(n){return n>=10000?(n/10000).toFixed(0)+'억':n>=1000?(n/1000).toFixed(0)+'천만':n+'만'}
+
+// Generate deals
+function genDeals(stage, count){
+  const deals=[];
+  for(let i=0;i<Math.min(count,5);i++){
+    const amt = randNum(100,10000);
+    deals.push({
+      name: rand(companies)+' 딜',
+      contact: rand(names),
+      company: rand(companies),
+      amount: amt,
+      amountStr: formatWon(amt)+'원',
+      owner: rand(owners),
+      prob: rand(probs),
+      amountTier: randAmount(),
+      mrr: randNum(100,7000),
+      date: `2026-0${randNum(1,3)}-${String(randNum(1,28)).padStart(2,'0')}`,
+      alert: Math.random()>.7,
+    });
+  }
+  return deals;
+}
+
+// Generate leads
+const leadData = [];
+for(let i=0;i<30;i++){
+  const fit=randNum(5,45), eng=randNum(5,45), total=fit+eng;
+  let status;
+  if(total>=70) status='sql'; else if(total>=40) status='mql'; else if(total>=20) status=Math.random()>.5?'sal':'nurturing'; else status='new';
+  leadData.push({
+    name: rand(names),
+    company: rand(companies),
+    source: rand(sources),
+    owner: rand(owners),
+    status,
+    fit, eng, total,
+    email: `${['kim','lee','park','choi','jung'][randNum(0,4)]}${randNum(10,99)}@${rand(companies).replace(/[^a-zA-Z]/g,'').toLowerCase()||'company'}.com`,
+    phone: `010-${randNum(1000,9999)}-${randNum(1000,9999)}`,
+    date: `2026-03-${String(randNum(1,26)).padStart(2,'0')}`,
+    emp: randNum(50,500),
+    branch: randNum(1,50),
+    industry: rand(industries),
+    tier: randNum(0,2)===0?'Enterprise':randNum(0,1)===0?'Mid-Market':'SMB',
+  });
+}
+
+// === RENDER ===
+function renderKanban(){
+  const el=document.getElementById('kanban');
+  el.innerHTML='';
+  stages.forEach(st=>{
+    const deals=genDeals(st,st.count);
+    const col=document.createElement('div');
+    col.className='kanban-col';
+    col.innerHTML=`
+      <div class="kanban-header" style="background:${st.color}">
+        <div>
+          <div style="display:flex;align-items:center;gap:8px">
+            <span class="kanban-header-title">${st.name}</span>
+            <span class="kanban-header-count">${st.count}</span>
+          </div>
+          <div class="kanban-header-amount">${st.amount}</div>
+        </div>
+      </div>
+      <div class="kanban-cards">
+        ${deals.map(d=>`
+          <div class="deal-card" onclick="openDealDetail(this)">
+            ${d.alert?'<div class="deal-card-alert"></div>':''}
+            <div class="deal-card-title">${d.name}</div>
+            <div class="deal-card-company">👤 ${d.contact} · ${d.company}</div>
+            <div class="deal-card-amount">${d.amountStr}</div>
+            <div class="deal-card-meta">
+              <span class="deal-tag tag-prob">계약 ${d.prob}</span>
+              <span class="deal-tag tag-amount">${d.amountTier}</span>
+              <span class="deal-tag tag-owner">${d.owner}</span>
+            </div>
+          </div>
+        `).join('')}
+      </div>
+    `;
+    el.appendChild(col);
+  });
+}
+
+function renderLeads(){
+  const tb=document.getElementById('lead-tbody');
+  tb.innerHTML=leadData.map(l=>{
+    const sc=l.total;
+    const barColor=sc>=70?'var(--rd)':sc>=40?'var(--amber)':sc>=20?'var(--teal)':'var(--lg)';
+    const statusMap={mql:'MQL',sql:'SQL',sal:'SAL',new:'New',nurturing:'Nurturing'};
+    return `<tr onclick="openLeadDetail(${leadData.indexOf(l)})" style="cursor:pointer">
+      <td><input type="checkbox" onclick="event.stopPropagation()"></td>
+      <td><span class="status-badge status-${l.status}">${statusMap[l.status]}</span></td>
+      <td>${sc}<span class="score-bar"><span class="score-fill" style="width:${sc}%;background:${barColor}"></span></span></td>
+      <td style="font-weight:600">${l.name}</td>
+      <td>${l.company}</td>
+      <td><span class="source-badge">${l.source}</span></td>
+      <td>${l.owner}</td>
+      <td style="color:var(--gy);font-size:12px">${l.date}</td>
+    </tr>`;
+  }).join('');
+}
+
+function renderContacts(){
+  const tb=document.getElementById('contact-tbody');
+  tb.innerHTML=leadData.slice(0,20).map(l=>`<tr>
+    <td><input type="checkbox"></td>
+    <td style="font-weight:600">${l.name}</td>
+    <td style="color:var(--teal)">${l.email}</td>
+    <td>${l.phone}</td>
+    <td>${rand(positions)}</td>
+    <td>${rand(ranks)}</td>
+    <td>${l.company}</td>
+  </tr>`).join('');
+}
+
+function renderDashCharts(){
+  // Source chart
+  const srcEl=document.getElementById('chart-source');
+  const srcData=[{l:'웹폼',v:120,c:'#0891B2'},{l:'신규가입',v:65,c:'#06B6D4'},{l:'채널톡',v:32,c:'#F59E0B'},{l:'이벤트',v:18,c:'#8B5CF6'},{l:'소개서',v:12,c:'#10B981'}];
+  srcEl.innerHTML=srcData.map(d=>`<div style="flex:1;text-align:center"><div class="chart-bar" style="height:${d.v/120*140}px;background:${d.c}"></div><div style="font-size:9px;color:var(--gy);margin-top:4px">${d.l}</div><div style="font-size:11px;font-weight:700">${d.v}</div></div>`).join('');
+
+  // Pipeline summary
+  const sumEl=document.getElementById('pipeline-summary');
+  sumEl.innerHTML=stages.map(st=>`<div style="flex:1;text-align:center;padding:10px;background:${st.color}11;border-radius:8px;border-left:3px solid ${st.color}"><div style="font-size:10px;color:var(--gy)">${st.name}</div><div style="font-size:18px;font-weight:800;color:${st.color};margin:4px 0">${st.count}</div><div style="font-size:10px;color:var(--gy)">${st.amount}</div></div>`).join('');
+}
+
+// === DETAIL PANEL ===
+function openLeadDetail(idx){
+  const l=leadData[idx];
+  const p=document.getElementById('detail-panel');
+  document.getElementById('detail-name').textContent=l.name;
+  document.getElementById('detail-company').textContent=l.company;
+  document.getElementById('detail-fit').textContent=l.fit;
+  document.getElementById('detail-eng').textContent=l.eng;
+  document.getElementById('detail-total').textContent=l.total;
+  const sm={mql:'MQL',sql:'SQL (Hot)',sal:'SAL',new:'New',nurturing:'Nurturing'};
+  document.getElementById('detail-status').innerHTML=`<span class="status-badge status-${l.status}">${sm[l.status]}</span>`;
+  document.getElementById('detail-email').textContent=l.email;
+  document.getElementById('detail-phone').textContent=l.phone;
+  document.getElementById('detail-source').textContent=l.source;
+  document.getElementById('detail-owner').textContent=l.owner;
+  document.getElementById('detail-emp').textContent=l.emp+'명';
+  document.getElementById('detail-branch').textContent=l.branch+'개';
+  document.getElementById('detail-industry').textContent=l.industry;
+  document.getElementById('detail-tier').textContent=l.tier;
+  const tl=document.getElementById('detail-timeline');
+  tl.innerHTML=[
+    {d:'2026-03-24 15:30',t:'이메일 오픈 - 업무마켓9 소개서'},
+    {d:'2026-03-22 11:00',t:'웹폼 제출 - 도입문의'},
+    {d:'2026-03-20 09:15',t:'가격 페이지 방문 (3회)'},
+    {d:'2026-03-18 14:20',t:'블로그 조회 - 간접구매 비용절감 가이드'},
+  ].map(i=>`<div class="timeline-item"><div class="timeline-date">${i.d}</div><div class="timeline-text">${i.t}</div></div>`).join('');
+  p.classList.add('open');
+}
+function openDealDetail(){
+  const idx=randNum(0,leadData.length-1);
+  openLeadDetail(idx);
+}
+function closeDetail(){document.getElementById('detail-panel').classList.remove('open')}
+
+// === VIEW SWITCH ===
+function switchView(view){
+  document.querySelectorAll('.view-section').forEach(v=>v.classList.remove('active'));
+  document.getElementById('view-'+view).classList.add('active');
+  document.querySelectorAll('.nav-item').forEach(n=>{
+    n.classList.toggle('active',n.dataset.view===view);
+  });
+  if(view==='dashboard') renderDashCharts();
+}
+
+// === INIT ===
+renderKanban();
+renderLeads();
+renderContacts();
+</script>
+</body>
+</html>

@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>캐스팅엔 CRM - 견적서</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #F0F9FF; color: #1E293B; min-height: 100vh; }
+
+.topbar { background: #1A2332; color: #fff; padding: 14px 24px; display: flex; align-items: center; gap: 16px; }
+.topbar h1 { font-size: 18px; font-weight: 600; }
+.topbar .btn-create { margin-left: auto; padding: 8px 18px; background: #0891B2; color: #fff; border: none; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; }
+.topbar .btn-create:hover { background: #0e7490; }
+
+.content { padding: 24px; max-width: 1400px; margin: 0 auto; }
+
+/* Tabs */
+.tabs { display: flex; gap: 0; margin-bottom: 24px; border-bottom: 2px solid #E2E8F0; }
+.tab { padding: 10px 20px; font-size: 14px; color: #64748B; cursor: pointer; border-bottom: 2px solid transparent; margin-bottom: -2px; transition: all .15s; font-weight: 500; }
+.tab:hover { color: #1E293B; }
+.tab.active { color: #0891B2; border-bottom-color: #0891B2; font-weight: 600; }
+
+/* Summary cards */
+.summary-bar { display: flex; gap: 16px; margin-bottom: 24px; }
+.summary-card { background: #fff; border: 1px solid #E2E8F0; border-radius: 10px; padding: 16px 20px; flex: 1; }
+.summary-card .label { font-size: 12px; color: #64748B; margin-bottom: 4px; }
+.summary-card .value { font-size: 22px; font-weight: 700; color: #1A2332; }
+.summary-card .sub { font-size: 12px; color: #64748B; margin-top: 2px; }
+
+.content-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+.content-header h2 { font-size: 16px; font-weight: 600; }
+.header-right { display: flex; gap: 12px; align-items: center; }
+.search-box { padding: 8px 14px; border: 1px solid #E2E8F0; border-radius: 8px; font-size: 13px; width: 240px; outline: none; background: #fff; }
+.search-box:focus { border-color: #0891B2; box-shadow: 0 0 0 3px rgba(8,145,178,0.1); }
+.filter-btn { padding: 7px 14px; border: 1px solid #E2E8F0; border-radius: 8px; background: #fff; font-size: 13px; color: #64748B; cursor: pointer; }
+.filter-btn:hover { background: #F8FAFC; }
+
+.table-wrap { background: #fff; border-radius: 12px; border: 1px solid #E2E8F0; overflow: hidden; }
+table { width: 100%; border-collapse: collapse; }
+thead th { padding: 12px 16px; text-align: left; font-size: 12px; font-weight: 600; color: #64748B; background: #F8FAFC; border-bottom: 1px solid #E2E8F0; white-space: nowrap; }
+tbody td { padding: 14px 16px; font-size: 13px; border-bottom: 1px solid #F1F5F9; }
+tbody tr:last-child td { border-bottom: none; }
+tbody tr:hover { background: #F8FAFC; cursor: pointer; }
+
+.quote-name { font-weight: 600; color: #1A2332; }
+.deal-link { color: #0891B2; font-size: 12px; text-decoration: none; }
+.deal-link:hover { text-decoration: underline; }
+
+.badge { font-size: 11px; padding: 3px 10px; border-radius: 20px; font-weight: 600; display: inline-block; }
+.badge.draft { background: #F1F5F9; color: #64748B; }
+.badge.sent { background: #E0F2FE; color: #0891B2; }
+.badge.viewed { background: #FEF3C7; color: #D97706; }
+.badge.accepted { background: #D1FAE5; color: #059669; }
+.badge.rejected { background: #FEE2E2; color: #DC2626; }
+.badge.expired { background: #F3F4F6; color: #9CA3AF; }
+
+.amount { font-weight: 700; color: #1A2332; }
+.views { display: flex; align-items: center; gap: 4px; }
+.views-icon { color: #64748B; font-size: 14px; }
+.views-count { font-weight: 600; }
+
+.assignee { display: flex; align-items: center; gap: 8px; }
+.assignee-avatar { width: 28px; height: 28px; border-radius: 50%; background: #E0F2FE; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; color: #0891B2; }
+
+/* Template tab content */
+.template-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; display: none; }
+.template-grid.show { display: grid; }
+.template-card { background: #fff; border: 1px solid #E2E8F0; border-radius: 10px; padding: 20px; cursor: pointer; transition: all .15s; }
+.template-card:hover { border-color: #0891B2; box-shadow: 0 4px 12px rgba(8,145,178,0.1); }
+.template-card h3 { font-size: 14px; font-weight: 600; margin-bottom: 8px; }
+.template-card p { font-size: 12px; color: #64748B; line-height: 1.5; }
+.template-card .meta { margin-top: 12px; font-size: 11px; color: #94A3B8; }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <h1>견적서</h1>
+  <button class="btn-create">+ 견적서 생성</button>
+</div>
+
+<div class="content">
+  <div class="tabs">
+    <div class="tab active" onclick="switchTab('quotes')">견적서 목록</div>
+    <div class="tab" onclick="switchTab('templates')">견적서 템플릿</div>
+  </div>
+
+  <!-- Summary -->
+  <div class="summary-bar" id="summaryBar">
+    <div class="summary-card"><div class="label">전체 견적서</div><div class="value">8</div></div>
+    <div class="summary-card"><div class="label">총 견적 금액</div><div class="value">287,400,000원</div></div>
+    <div class="summary-card"><div class="label">수락률</div><div class="value">37.5%</div><div class="sub">3건 수락 / 8건 발송</div></div>
+    <div class="summary-card"><div class="label">평균 응답 시간</div><div class="value">3.2일</div></div>
+  </div>
+
+  <div id="quotesSection">
+    <div class="content-header">
+      <h2>견적서 목록</h2>
+      <div class="header-right">
+        <input type="text" class="search-box" placeholder="견적서 검색...">
+        <button class="filter-btn">상태 필터</button>
+      </div>
+    </div>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>견적서명</th>
+            <th>연결된 딜</th>
+            <th>상태</th>
+            <th>금액</th>
+            <th>유효기간</th>
+            <th>열람</th>
+            <th>발송일</th>
+            <th>담당자</th>
+          </tr>
+        </thead>
+        <tbody id="quoteBody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="template-grid" id="templateSection">
+    <div class="template-card">
+      <h3>기본 견적서</h3>
+      <p>일반적인 제품/서비스 견적에 사용하는 기본 템플릿입니다. 품목, 수량, 단가, 할인율 항목 포함.</p>
+      <div class="meta">마지막 수정: 2026.03.10 | 사용 횟수: 45회</div>
+    </div>
+    <div class="template-card">
+      <h3>SaaS 구독 견적서</h3>
+      <p>월간/연간 구독 모델의 견적에 최적화된 템플릿. 플랜별 가격, 사용자 수, 부가 옵션 포함.</p>
+      <div class="meta">마지막 수정: 2026.03.05 | 사용 횟수: 32회</div>
+    </div>
+    <div class="template-card">
+      <h3>엔터프라이즈 제안서</h3>
+      <p>대기업 고객용 맞춤 견적 템플릿. 도입 컨설팅, 커스터마이징, 교육 비용 항목 포함.</p>
+      <div class="meta">마지막 수정: 2026.02.28 | 사용 횟수: 18회</div>
+    </div>
+    <div class="template-card">
+      <h3>파일럿 프로젝트 견적서</h3>
+      <p>단기 파일럿/PoC 프로젝트용 견적 템플릿. 기간, 범위, 성공 기준 명시.</p>
+      <div class="meta">마지막 수정: 2026.02.20 | 사용 횟수: 12회</div>
+    </div>
+    <div class="template-card">
+      <h3>갱신 견적서</h3>
+      <p>기존 고객의 계약 갱신용 템플릿. 기존 조건 대비 변경 사항 하이라이트 기능.</p>
+      <div class="meta">마지막 수정: 2026.02.15 | 사용 횟수: 27회</div>
+    </div>
+    <div class="template-card">
+      <h3>프로모션 견적서</h3>
+      <p>특별 할인 및 프로모션 적용 견적 템플릿. 할인 기한, 조건 명시.</p>
+      <div class="meta">마지막 수정: 2026.01.30 | 사용 횟수: 8회</div>
+    </div>
+  </div>
+</div>
+
+<script>
+const quotes = [
+  { name: '업무마켓9 Enterprise 도입 견적', deal: 'SK이노베이션 전사 도입', status: 'accepted', statusLabel: '수락', amount: 84000000, validity: '2026.04.15', views: 7, sentDate: '2026.03.18', assignee: '이준호', initials: '이' },
+  { name: 'BSM 솔루션 연간 구독 견적', deal: '한화솔루션 구매팀', status: 'viewed', statusLabel: '열람', amount: 36000000, validity: '2026.04.10', views: 3, sentDate: '2026.03.22', assignee: '박민지', initials: '박' },
+  { name: '파일럿 프로젝트 견적 (3개월)', deal: 'LG CNS PoC', status: 'sent', statusLabel: '발송', amount: 12000000, validity: '2026.04.05', views: 0, sentDate: '2026.03.24', assignee: '김하늘', initials: '김' },
+  { name: '구매관리 Standard 플랜 견적', deal: 'CJ제일제당 간접구매', status: 'accepted', statusLabel: '수락', amount: 18000000, validity: '2026.03.30', views: 5, sentDate: '2026.03.10', assignee: '이준호', initials: '이' },
+  { name: '맞춤 개발 + 구독 통합 견적', deal: '두산중공업 DX', status: 'rejected', statusLabel: '거절', amount: 65000000, validity: '2026.03.25', views: 4, sentDate: '2026.03.05', assignee: '최서연', initials: '최' },
+  { name: '계약 갱신 견적 (2년차)', deal: '아모레퍼시픽 구매팀', status: 'accepted', statusLabel: '수락', amount: 24000000, validity: '2026.04.20', views: 2, sentDate: '2026.03.20', assignee: '박민지', initials: '박' },
+  { name: '프로모션 할인 견적 (Q1 특별)', deal: '하나금융그룹', status: 'expired', statusLabel: '만료', amount: 28800000, validity: '2026.03.15', views: 1, sentDate: '2026.02.25', assignee: '김하늘', initials: '김' },
+  { name: '신규 도입 견적 (초안)', deal: 'GS리테일 총무팀', status: 'draft', statusLabel: '초안', amount: 19600000, validity: '-', views: 0, sentDate: '-', assignee: '이준호', initials: '이' },
+];
+
+const body = document.getElementById('quoteBody');
+quotes.forEach(q => {
+  const tr = document.createElement('tr');
+  tr.innerHTML = `
+    <td><span class="quote-name">${q.name}</span></td>
+    <td><a class="deal-link" href="#">${q.deal}</a></td>
+    <td><span class="badge ${q.status}">${q.statusLabel}</span></td>
+    <td><span class="amount">${q.amount.toLocaleString()}원</span></td>
+    <td style="font-size:13px; color:#64748B;">${q.validity}</td>
+    <td><div class="views"><span class="views-icon">👁</span><span class="views-count">${q.views}회</span></div></td>
+    <td style="font-size:13px; color:#64748B;">${q.sentDate}</td>
+    <td><div class="assignee"><div class="assignee-avatar">${q.initials}</div><span style="font-size:13px;">${q.assignee}</span></div></td>
+  `;
+  body.appendChild(tr);
+});
+
+function switchTab(tab) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  if (tab === 'quotes') {
+    document.querySelectorAll('.tab')[0].classList.add('active');
+    document.getElementById('quotesSection').style.display = '';
+    document.getElementById('templateSection').classList.remove('show');
+    document.getElementById('summaryBar').style.display = '';
+  } else {
+    document.querySelectorAll('.tab')[1].classList.add('active');
+    document.getElementById('quotesSection').style.display = 'none';
+    document.getElementById('templateSection').classList.add('show');
+    document.getElementById('summaryBar').style.display = 'none';
+  }
+}
+</script>
+</body>
+</html>

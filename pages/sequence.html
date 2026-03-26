@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>캐스팅엔 CRM - 시퀀스</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #F0F9FF; color: #1E293B; height: 100vh; display: flex; flex-direction: column; }
+
+.topbar { background: #1A2332; color: #fff; padding: 14px 24px; display: flex; align-items: center; gap: 16px; }
+.topbar h1 { font-size: 18px; font-weight: 600; }
+.topbar .btn-create { margin-left: auto; padding: 8px 18px; background: #0891B2; color: #fff; border: none; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; }
+.topbar .btn-create:hover { background: #0e7490; }
+
+.main { display: flex; flex: 1; overflow: hidden; }
+
+/* Sidebar */
+.sidebar { width: 240px; background: #fff; border-right: 1px solid #E2E8F0; padding: 20px 0; overflow-y: auto; flex-shrink: 0; }
+.sidebar-item { padding: 10px 20px; font-size: 13px; color: #1E293B; cursor: pointer; display: flex; justify-content: space-between; align-items: center; transition: background .1s; }
+.sidebar-item:hover { background: #F0F9FF; }
+.sidebar-item.active { background: #E0F2FE; color: #0891B2; font-weight: 600; }
+.sidebar-item .count { font-size: 12px; color: #64748B; background: #F1F5F9; padding: 2px 8px; border-radius: 10px; }
+.sidebar-item.active .count { background: #BAE6FD; color: #0891B2; }
+.sidebar-divider { height: 1px; background: #E2E8F0; margin: 12px 16px; }
+.sidebar-label { font-size: 11px; color: #64748B; padding: 4px 20px 8px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
+
+/* Content */
+.content { flex: 1; padding: 24px; overflow-y: auto; }
+.content-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+.content-header h2 { font-size: 16px; font-weight: 600; color: #1A2332; }
+.search-box { padding: 8px 14px; border: 1px solid #E2E8F0; border-radius: 8px; font-size: 13px; width: 260px; outline: none; background: #fff; }
+.search-box:focus { border-color: #0891B2; box-shadow: 0 0 0 3px rgba(8,145,178,0.1); }
+
+/* Table */
+.table-wrap { background: #fff; border-radius: 12px; border: 1px solid #E2E8F0; overflow: hidden; }
+table { width: 100%; border-collapse: collapse; }
+thead th { padding: 12px 16px; text-align: left; font-size: 12px; font-weight: 600; color: #64748B; background: #F8FAFC; border-bottom: 1px solid #E2E8F0; white-space: nowrap; }
+tbody td { padding: 14px 16px; font-size: 13px; border-bottom: 1px solid #F1F5F9; }
+tbody tr:last-child td { border-bottom: none; }
+tbody tr:hover { background: #F8FAFC; }
+
+.seq-name { font-weight: 600; color: #1A2332; }
+.seq-tag { font-size: 11px; color: #64748B; background: #F1F5F9; padding: 2px 8px; border-radius: 4px; margin-right: 6px; }
+
+/* Toggle */
+.toggle { width: 36px; height: 20px; border-radius: 10px; background: #CBD5E1; position: relative; cursor: pointer; transition: background .2s; }
+.toggle.on { background: #0891B2; }
+.toggle::after { content: ''; position: absolute; width: 16px; height: 16px; border-radius: 50%; background: #fff; top: 2px; left: 2px; transition: left .2s; box-shadow: 0 1px 3px rgba(0,0,0,0.15); }
+.toggle.on::after { left: 18px; }
+
+.stat { font-weight: 600; color: #1E293B; }
+.stat-sub { font-size: 11px; color: #94A3B8; }
+.assignee { display: flex; align-items: center; gap: 8px; }
+.assignee-avatar { width: 28px; height: 28px; border-radius: 50%; background: #E0F2FE; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; color: #0891B2; }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <h1>시퀀스</h1>
+  <button class="btn-create">+ 시퀀스 생성</button>
+</div>
+
+<div class="main">
+  <div class="sidebar">
+    <div class="sidebar-item active"><span>전체 시퀀스</span><span class="count">20</span></div>
+    <div class="sidebar-item"><span>내가 만든 시퀀스</span><span class="count">16</span></div>
+    <div class="sidebar-divider"></div>
+    <div class="sidebar-label">폴더</div>
+    <div class="sidebar-item"><span>📁 업무마켓</span><span class="count">11</span></div>
+    <div class="sidebar-item"><span>📁 기업</span><span class="count">9</span></div>
+  </div>
+
+  <div class="content">
+    <div class="content-header">
+      <h2>전체 시퀀스 <span style="color:#64748B; font-weight:400;">(20)</span></h2>
+      <input type="text" class="search-box" placeholder="시퀀스 검색...">
+    </div>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>시퀀스명</th>
+            <th>상태</th>
+            <th>등록 고객</th>
+            <th>종료 고객</th>
+            <th>이메일 오픈</th>
+            <th>담당자</th>
+          </tr>
+        </thead>
+        <tbody id="seqBody"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<script>
+const sequences = [
+  { tag: '설문조사', name: '0121 기프티콘 후 소개서 메일 발송', on: true, enrolled: 33, completed: 33, opened: 20, assignee: '박민지', initials: '박' },
+  { tag: '설문조사', name: '2407 총무세미나 설문참여 고객', on: true, enrolled: 201, completed: 60, opened: 63, assignee: '김하늘', initials: '김' },
+  { tag: '문의', name: '접수 완료 메일 시퀀스', on: true, enrolled: 252, completed: 252, opened: 177, assignee: '이준호', initials: '이' },
+  { tag: '콘텐츠', name: '인종 담당자 매뉴얼 자료 발송', on: true, enrolled: 12, completed: 5, opened: 10, assignee: '박민지', initials: '박' },
+  { tag: '콘텐츠', name: '간식 비교 리포트 신청시', on: true, enrolled: 27, completed: 6, opened: 22, assignee: '김하늘', initials: '김' },
+  { tag: '콘텐츠', name: '구매관리솔루션 비교 자료', on: true, enrolled: 62, completed: 24, opened: 47, assignee: '이준호', initials: '이' },
+  { tag: '세미나', name: '간접구매 비용 절감 세미나 안내', on: false, enrolled: 156, completed: 130, opened: 98, assignee: '최서연', initials: '최' },
+  { tag: '온보딩', name: '신규 가입 고객 웰컴 시퀀스', on: true, enrolled: 445, completed: 380, opened: 312, assignee: '박민지', initials: '박' },
+  { tag: '리텐션', name: '30일 미접속 고객 재방문 유도', on: true, enrolled: 89, completed: 45, opened: 52, assignee: '김하늘', initials: '김' },
+  { tag: '영업', name: 'MQL 전환 후 영업 후속 메일', on: true, enrolled: 134, completed: 78, opened: 95, assignee: '이준호', initials: '이' },
+  { tag: '영업', name: '데모 요청 후 후속 안내 시퀀스', on: false, enrolled: 76, completed: 54, opened: 48, assignee: '최서연', initials: '최' },
+  { tag: '이벤트', name: '연말 프로모션 할인 안내', on: false, enrolled: 320, completed: 320, opened: 198, assignee: '박민지', initials: '박' },
+];
+
+const body = document.getElementById('seqBody');
+sequences.forEach(s => {
+  const openRate = s.enrolled > 0 ? Math.round(s.opened / s.enrolled * 100) : 0;
+  const tr = document.createElement('tr');
+  tr.innerHTML = `
+    <td>
+      <span class="seq-tag">${s.tag}</span>
+      <span class="seq-name">${s.name}</span>
+    </td>
+    <td><div class="toggle ${s.on ? 'on' : ''}" onclick="this.classList.toggle('on')"></div></td>
+    <td><div class="stat">${s.enrolled}<span class="stat-sub">명</span></div></td>
+    <td><div class="stat">${s.completed}<span class="stat-sub">명</span></div></td>
+    <td><div class="stat">${s.opened}<span class="stat-sub">명 (${openRate}%)</span></div></td>
+    <td><div class="assignee"><div class="assignee-avatar">${s.initials}</div><span style="font-size:13px;">${s.assignee}</span></div></td>
+  `;
+  body.appendChild(tr);
+});
+</script>
+</body>
+</html>

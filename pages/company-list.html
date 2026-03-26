@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>캐스팅엔 CRM - 회사 관리</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #F0F9FF; color: #1E293B; font-size: 14px; }
+
+  .sidebar { width: 240px; height: 100vh; background: #1A2332; position: fixed; left: 0; top: 0; padding: 20px 0; display: flex; flex-direction: column; }
+  .sidebar-logo { color: #fff; font-size: 18px; font-weight: 700; padding: 0 20px 24px; border-bottom: 1px solid rgba(255,255,255,0.08); }
+  .sidebar-logo span { color: #0891B2; }
+  .sidebar-nav { padding: 16px 0; flex: 1; }
+  .sidebar-item { display: flex; align-items: center; gap: 10px; padding: 10px 20px; color: #94A3B8; font-size: 13px; cursor: pointer; transition: all 0.15s; }
+  .sidebar-item:hover { background: rgba(255,255,255,0.05); color: #CBD5E1; }
+  .sidebar-item.active { background: rgba(8,145,178,0.15); color: #0891B2; border-right: 3px solid #0891B2; }
+  .sidebar-item svg { width: 18px; height: 18px; flex-shrink: 0; }
+  .sidebar-section { padding: 16px 20px 8px; font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em; color: #475569; }
+
+  .main { margin-left: 240px; min-height: 100vh; }
+
+  .topbar { background: #fff; border-bottom: 1px solid #E2E8F0; padding: 16px 32px; display: flex; align-items: center; justify-content: space-between; }
+  .topbar-left { display: flex; align-items: center; gap: 24px; }
+  .topbar-title { font-size: 20px; font-weight: 700; color: #1A2332; }
+  .topbar-right { display: flex; align-items: center; gap: 12px; }
+  .btn-primary { background: #0891B2; color: #fff; border: none; padding: 8px 16px; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 6px; transition: background 0.15s; }
+  .btn-primary:hover { background: #0E7490; }
+
+  .filterbar { background: #fff; border-bottom: 1px solid #E2E8F0; padding: 12px 32px; display: flex; align-items: center; gap: 12px; }
+  .search-box { display: flex; align-items: center; gap: 8px; background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 8px; padding: 7px 12px; width: 280px; transition: border-color 0.15s; }
+  .search-box:focus-within { border-color: #0891B2; background: #fff; }
+  .search-box input { border: none; outline: none; background: transparent; font-size: 13px; width: 100%; color: #1E293B; }
+  .search-box input::placeholder { color: #94A3B8; }
+  .search-box svg { width: 16px; height: 16px; color: #94A3B8; flex-shrink: 0; }
+  .filter-btn { display: flex; align-items: center; gap: 6px; padding: 7px 12px; border: 1px solid #E2E8F0; border-radius: 8px; font-size: 13px; color: #64748B; cursor: pointer; background: #fff; transition: all 0.15s; }
+  .filter-btn:hover { border-color: #CBD5E1; color: #1E293B; }
+  .filter-btn svg { width: 15px; height: 15px; }
+  .filter-spacer { flex: 1; }
+
+  .table-wrap { padding: 0 32px 32px; margin-top: 1px; }
+  table { width: 100%; border-collapse: collapse; background: #fff; border-radius: 12px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.04); }
+  thead th { background: #F8FAFC; padding: 12px 16px; text-align: left; font-size: 12px; font-weight: 600; color: #64748B; text-transform: uppercase; letter-spacing: 0.03em; border-bottom: 1px solid #E2E8F0; white-space: nowrap; }
+  tbody td { padding: 12px 16px; border-bottom: 1px solid #F1F5F9; font-size: 13px; vertical-align: middle; }
+  tbody tr:hover { background: #F8FAFC; }
+  tbody tr:last-child td { border-bottom: none; }
+
+  .checkbox { width: 16px; height: 16px; border: 2px solid #CBD5E1; border-radius: 4px; cursor: pointer; appearance: none; -webkit-appearance: none; transition: all 0.15s; }
+  .checkbox:checked { background: #0891B2; border-color: #0891B2; }
+
+  .company-name { font-weight: 600; color: #1E293B; cursor: pointer; }
+  .company-name:hover { color: #0891B2; }
+
+  .badge { display: inline-block; padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 600; letter-spacing: 0.02em; }
+  .badge-enterprise { background: #8B5CF6; color: #fff; }
+  .badge-midmarket { background: #DBEAFE; color: #2563EB; }
+  .badge-smb { background: #F1F5F9; color: #64748B; }
+
+  .manager-cell { display: flex; align-items: center; gap: 6px; }
+  .manager-avatar { width: 24px; height: 24px; border-radius: 50%; background: linear-gradient(135deg, #0891B2, #06B6D4); display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 600; color: #fff; }
+
+  .pagination { padding: 16px 32px; display: flex; align-items: center; justify-content: space-between; background: #fff; border-top: 1px solid #E2E8F0; }
+  .pagination-info { font-size: 13px; color: #64748B; }
+  .pagination-info strong { color: #1E293B; }
+  .pagination-controls { display: flex; align-items: center; gap: 8px; }
+  .page-btn { width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; border: 1px solid #E2E8F0; border-radius: 6px; cursor: pointer; color: #64748B; background: #fff; font-size: 13px; transition: all 0.15s; }
+  .page-btn:hover { border-color: #0891B2; color: #0891B2; }
+  .page-btn.active { background: #0891B2; color: #fff; border-color: #0891B2; }
+  .page-btn.disabled { opacity: 0.4; cursor: not-allowed; }
+
+  .revenue { font-variant-numeric: tabular-nums; }
+</style>
+</head>
+<body>
+
+<nav class="sidebar">
+  <div class="sidebar-logo">캐스팅<span>엔</span></div>
+  <div class="sidebar-nav">
+    <div class="sidebar-section">워크스페이스</div>
+    <div class="sidebar-item">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+      대시보드
+    </div>
+    <div class="sidebar-item">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+      고객
+    </div>
+    <div class="sidebar-item active">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/></svg>
+      회사
+    </div>
+    <div class="sidebar-item">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+      딜
+    </div>
+    <div class="sidebar-section">자동화</div>
+    <div class="sidebar-item">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="M7 8l5 4-5 4"/><line x1="13" y1="16" x2="17" y2="16"/></svg>
+      시퀀스
+    </div>
+    <div class="sidebar-item">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+      이메일
+    </div>
+    <div class="sidebar-section">분석</div>
+    <div class="sidebar-item">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+      리포트
+    </div>
+  </div>
+</nav>
+
+<div class="main">
+  <div class="topbar">
+    <div class="topbar-left">
+      <h1 class="topbar-title">회사</h1>
+    </div>
+    <div class="topbar-right">
+      <button class="filter-btn">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="15" height="15"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        내보내기
+      </button>
+      <button class="btn-primary">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        회사 생성
+      </button>
+    </div>
+  </div>
+
+  <div class="filterbar">
+    <div class="search-box">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      <input type="text" placeholder="회사 검색...">
+    </div>
+    <button class="filter-btn">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>
+      필터
+    </button>
+    <button class="filter-btn">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+      컬럼 설정
+    </button>
+    <div class="filter-spacer"></div>
+  </div>
+
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th style="width:40px"><input type="checkbox" class="checkbox"></th>
+          <th>회사명</th>
+          <th>업종</th>
+          <th>직원수</th>
+          <th>지점수</th>
+          <th>연매출</th>
+          <th>ICP Tier</th>
+          <th>담당자</th>
+          <th>생성날짜</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><input type="checkbox" class="checkbox"></td>
+          <td><span class="company-name">위편</span></td>
+          <td>IT/소프트웨어</td>
+          <td>85</td>
+          <td>2</td>
+          <td class="revenue">120억</td>
+          <td><span class="badge badge-midmarket">Mid-Market</span></td>
+          <td><div class="manager-cell"><div class="manager-avatar">유</div>유제욱</div></td>
+          <td>2025-08-12</td>
+        </tr>
+        <tr>
+          <td><input type="checkbox" class="checkbox"></td>
+          <td><span class="company-name">아미코젠</span></td>
+          <td>바이오/제약</td>
+          <td>420</td>
+          <td>5</td>
+          <td class="revenue">2,100억</td>
+          <td><span class="badge badge-enterprise">Enterprise</span></td>
+          <td><div class="manager-cell"><div class="manager-avatar">박</div>박경재</div></td>
+          <td>2025-07-03</td>
+        </tr>
+        <tr>
+          <td><input type="checkbox" class="checkbox"></td>
+          <td><span class="company-name">42dot</span></td>
+          <td>자율주행/AI</td>
+          <td>310</td>
+          <td>3</td>
+          <td class="revenue">850억</td>
+          <td><span class="badge badge-enterprise">Enterprise</span></td>
+          <td><div class="manager-cell"><div class="manager-avatar">오</div>오정희</div></td>
+          <td>2025-06-15</td>
+        </tr>
+        <tr>
+          <td><input type="checkbox" class="checkbox"></td>
+          <td><span class="company-name">GC녹십자</span></td>
+          <td>제약/헬스케어</td>
+          <td>3,200</td>
+          <td>12</td>
+          <td class="revenue">1.8조</td>
+          <td><span class="badge badge-enterprise">Enterprise</span></td>
+          <td><div class="manager-cell"><div class="manager-avatar">유</div>유제욱</div></td>
+          <td>2025-05-22</td>
+        </tr>
+        <tr>
+          <td><input type="checkbox" class="checkbox"></td>
+          <td><span class="company-name">미스토코리아</span></td>
+          <td>뷰티/화장품</td>
+          <td>45</td>
+          <td>1</td>
+          <td class="revenue">35억</td>
+          <td><span class="badge badge-smb">SMB</span></td>
+          <td><div class="manager-cell"><div class="manager-avatar">박</div>박경재</div></td>
+          <td>2025-09-01</td>
+        </tr>
+        <tr>
+          <td><input type="checkbox" class="checkbox"></td>
+          <td><span class="company-name">나이스엔지니어링</span></td>
+          <td>건설/엔지니어링</td>
+          <td>180</td>
+          <td>4</td>
+          <td class="revenue">520억</td>
+          <td><span class="badge badge-midmarket">Mid-Market</span></td>
+          <td><div class="manager-cell"><div class="manager-avatar">오</div>오정희</div></td>
+          <td>2025-08-28</td>
+        </tr>
+        <tr>
+          <td><input type="checkbox" class="checkbox"></td>
+          <td><span class="company-name">보험연수원</span></td>
+          <td>교육/금융</td>
+          <td>95</td>
+          <td>2</td>
+          <td class="revenue">280억</td>
+          <td><span class="badge badge-midmarket">Mid-Market</span></td>
+          <td><div class="manager-cell"><div class="manager-avatar">유</div>유제욱</div></td>
+          <td>2025-07-19</td>
+        </tr>
+        <tr>
+          <td><input type="checkbox" class="checkbox"></td>
+          <td><span class="company-name">한전FMS</span></td>
+          <td>에너지/시설관리</td>
+          <td>650</td>
+          <td>8</td>
+          <td class="revenue">3,200억</td>
+          <td><span class="badge badge-enterprise">Enterprise</span></td>
+          <td><div class="manager-cell"><div class="manager-avatar">박</div>박경재</div></td>
+          <td>2025-04-10</td>
+        </tr>
+        <tr>
+          <td><input type="checkbox" class="checkbox"></td>
+          <td><span class="company-name">버킷플레이스</span></td>
+          <td>IT/인테리어플랫폼</td>
+          <td>520</td>
+          <td>3</td>
+          <td class="revenue">1,500억</td>
+          <td><span class="badge badge-enterprise">Enterprise</span></td>
+          <td><div class="manager-cell"><div class="manager-avatar">오</div>오정희</div></td>
+          <td>2025-06-30</td>
+        </tr>
+        <tr>
+          <td><input type="checkbox" class="checkbox"></td>
+          <td><span class="company-name">에이테크오토모</span></td>
+          <td>자동차부품/제조</td>
+          <td>150</td>
+          <td>3</td>
+          <td class="revenue">380억</td>
+          <td><span class="badge badge-midmarket">Mid-Market</span></td>
+          <td><div class="manager-cell"><div class="manager-avatar">유</div>유제욱</div></td>
+          <td>2025-10-05</td>
+        </tr>
+        <tr>
+          <td><input type="checkbox" class="checkbox"></td>
+          <td><span class="company-name">칼레스타에너지</span></td>
+          <td>에너지/신재생</td>
+          <td>60</td>
+          <td>2</td>
+          <td class="revenue">95억</td>
+          <td><span class="badge badge-smb">SMB</span></td>
+          <td><div class="manager-cell"><div class="manager-avatar">박</div>박경재</div></td>
+          <td>2025-11-12</td>
+        </tr>
+        <tr>
+          <td><input type="checkbox" class="checkbox"></td>
+          <td><span class="company-name">런던베이글</span></td>
+          <td>F&B/외식</td>
+          <td>120</td>
+          <td>7</td>
+          <td class="revenue">180억</td>
+          <td><span class="badge badge-midmarket">Mid-Market</span></td>
+          <td><div class="manager-cell"><div class="manager-avatar">오</div>오정희</div></td>
+          <td>2025-09-18</td>
+        </tr>
+        <tr>
+          <td><input type="checkbox" class="checkbox"></td>
+          <td><span class="company-name">세아네트웍스</span></td>
+          <td>IT/네트워크</td>
+          <td>230</td>
+          <td>4</td>
+          <td class="revenue">680억</td>
+          <td><span class="badge badge-midmarket">Mid-Market</span></td>
+          <td><div class="manager-cell"><div class="manager-avatar">유</div>유제욱</div></td>
+          <td>2025-08-05</td>
+        </tr>
+        <tr>
+          <td><input type="checkbox" class="checkbox"></td>
+          <td><span class="company-name">한국콜마</span></td>
+          <td>화장품/ODM</td>
+          <td>2,800</td>
+          <td>9</td>
+          <td class="revenue">1.2조</td>
+          <td><span class="badge badge-enterprise">Enterprise</span></td>
+          <td><div class="manager-cell"><div class="manager-avatar">박</div>박경재</div></td>
+          <td>2025-05-08</td>
+        </tr>
+        <tr>
+          <td><input type="checkbox" class="checkbox"></td>
+          <td><span class="company-name">플레이디</span></td>
+          <td>광고/마케팅</td>
+          <td>35</td>
+          <td>1</td>
+          <td class="revenue">22억</td>
+          <td><span class="badge badge-smb">SMB</span></td>
+          <td><div class="manager-cell"><div class="manager-avatar">오</div>오정희</div></td>
+          <td>2025-12-01</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="pagination">
+    <div class="pagination-info">
+      총 <strong>15</strong>개 회사 표시 중
+    </div>
+    <div class="pagination-controls">
+      <div class="page-btn disabled">&lsaquo;</div>
+      <div class="page-btn active">1</div>
+      <div class="page-btn">&rsaquo;</div>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>

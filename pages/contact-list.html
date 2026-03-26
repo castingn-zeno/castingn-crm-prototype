@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>캐스팅엔 CRM - 고객 관리</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #F0F9FF; color: #1E293B; font-size: 14px; }
+
+  /* Sidebar placeholder */
+  .sidebar { width: 240px; height: 100vh; background: #1A2332; position: fixed; left: 0; top: 0; padding: 20px 0; display: flex; flex-direction: column; }
+  .sidebar-logo { color: #fff; font-size: 18px; font-weight: 700; padding: 0 20px 24px; border-bottom: 1px solid rgba(255,255,255,0.08); }
+  .sidebar-logo span { color: #0891B2; }
+  .sidebar-nav { padding: 16px 0; flex: 1; }
+  .sidebar-item { display: flex; align-items: center; gap: 10px; padding: 10px 20px; color: #94A3B8; font-size: 13px; cursor: pointer; transition: all 0.15s; }
+  .sidebar-item:hover { background: rgba(255,255,255,0.05); color: #CBD5E1; }
+  .sidebar-item.active { background: rgba(8,145,178,0.15); color: #0891B2; border-right: 3px solid #0891B2; }
+  .sidebar-item svg { width: 18px; height: 18px; flex-shrink: 0; }
+  .sidebar-section { padding: 16px 20px 8px; font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em; color: #475569; }
+
+  /* Main content */
+  .main { margin-left: 240px; min-height: 100vh; }
+
+  /* Top bar */
+  .topbar { background: #fff; border-bottom: 1px solid #E2E8F0; padding: 16px 32px; display: flex; align-items: center; justify-content: space-between; }
+  .topbar-left { display: flex; align-items: center; gap: 24px; }
+  .topbar-title { font-size: 20px; font-weight: 700; color: #1A2332; }
+  .topbar-tabs { display: flex; gap: 0; }
+  .topbar-tab { padding: 8px 16px; font-size: 13px; color: #64748B; cursor: pointer; border-bottom: 2px solid transparent; transition: all 0.15s; }
+  .topbar-tab.active { color: #0891B2; border-bottom-color: #0891B2; font-weight: 600; }
+  .topbar-tab:hover { color: #1E293B; }
+  .topbar-right { display: flex; align-items: center; gap: 12px; }
+  .view-count { font-size: 12px; color: #64748B; background: #F1F5F9; padding: 4px 10px; border-radius: 6px; }
+  .btn-primary { background: #0891B2; color: #fff; border: none; padding: 8px 16px; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 6px; transition: background 0.15s; }
+  .btn-primary:hover { background: #0E7490; }
+
+  /* Filter bar */
+  .filterbar { background: #fff; border-bottom: 1px solid #E2E8F0; padding: 12px 32px; display: flex; align-items: center; gap: 12px; }
+  .search-box { display: flex; align-items: center; gap: 8px; background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 8px; padding: 7px 12px; width: 280px; transition: border-color 0.15s; }
+  .search-box:focus-within { border-color: #0891B2; background: #fff; }
+  .search-box input { border: none; outline: none; background: transparent; font-size: 13px; width: 100%; color: #1E293B; }
+  .search-box input::placeholder { color: #94A3B8; }
+  .search-box svg { width: 16px; height: 16px; color: #94A3B8; flex-shrink: 0; }
+  .filter-btn { display: flex; align-items: center; gap: 6px; padding: 7px 12px; border: 1px solid #E2E8F0; border-radius: 8px; font-size: 13px; color: #64748B; cursor: pointer; background: #fff; transition: all 0.15s; }
+  .filter-btn:hover { border-color: #CBD5E1; color: #1E293B; }
+  .filter-btn svg { width: 15px; height: 15px; }
+  .filter-spacer { flex: 1; }
+
+  /* Table */
+  .table-wrap { padding: 0 32px 32px; margin-top: 1px; }
+  table { width: 100%; border-collapse: collapse; background: #fff; border-radius: 12px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.04); }
+  thead th { background: #F8FAFC; padding: 12px 16px; text-align: left; font-size: 12px; font-weight: 600; color: #64748B; text-transform: uppercase; letter-spacing: 0.03em; border-bottom: 1px solid #E2E8F0; white-space: nowrap; }
+  tbody td { padding: 12px 16px; border-bottom: 1px solid #F1F5F9; font-size: 13px; vertical-align: middle; }
+  tbody tr:hover { background: #F8FAFC; }
+  tbody tr:last-child td { border-bottom: none; }
+
+  .checkbox { width: 16px; height: 16px; border: 2px solid #CBD5E1; border-radius: 4px; cursor: pointer; appearance: none; -webkit-appearance: none; transition: all 0.15s; }
+  .checkbox:checked { background: #0891B2; border-color: #0891B2; }
+
+  .contact-name { display: flex; align-items: center; gap: 10px; }
+  .avatar { width: 32px; height: 32px; border-radius: 50%; background: linear-gradient(135deg, #CBD5E1, #94A3B8); display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 600; color: #fff; flex-shrink: 0; }
+  .avatar.a1 { background: linear-gradient(135deg, #0891B2, #06B6D4); }
+  .avatar.a2 { background: linear-gradient(135deg, #8B5CF6, #A78BFA); }
+  .avatar.a3 { background: linear-gradient(135deg, #F59E0B, #FBBF24); }
+  .avatar.a4 { background: linear-gradient(135deg, #10B981, #34D399); }
+  .avatar.a5 { background: linear-gradient(135deg, #EF4444, #F87171); }
+  .name-text { font-weight: 600; color: #1E293B; }
+  .name-text:hover { color: #0891B2; cursor: pointer; }
+
+  .linkedin-icon { color: #0A66C2; cursor: pointer; }
+  .linkedin-icon svg { width: 16px; height: 16px; }
+
+  .badge { display: inline-block; padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.02em; }
+  .badge-subscriber { background: #F1F5F9; color: #64748B; }
+  .badge-lead { background: #DBEAFE; color: #2563EB; }
+  .badge-mql { background: #FEF3C7; color: #D97706; }
+  .badge-sql { background: #D1FAE5; color: #059669; }
+  .badge-customer { background: #0891B2; color: #fff; }
+
+  /* Pagination */
+  .pagination { padding: 16px 32px; display: flex; align-items: center; justify-content: space-between; background: #fff; border-top: 1px solid #E2E8F0; }
+  .pagination-info { font-size: 13px; color: #64748B; }
+  .pagination-info strong { color: #1E293B; }
+  .pagination-controls { display: flex; align-items: center; gap: 8px; }
+  .page-btn { width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; border: 1px solid #E2E8F0; border-radius: 6px; cursor: pointer; color: #64748B; background: #fff; font-size: 13px; transition: all 0.15s; }
+  .page-btn:hover { border-color: #0891B2; color: #0891B2; }
+  .page-btn.active { background: #0891B2; color: #fff; border-color: #0891B2; }
+  .page-btn.disabled { opacity: 0.4; cursor: not-allowed; }
+  .per-page { font-size: 12px; color: #64748B; display: flex; align-items: center; gap: 6px; }
+  .per-page select { border: 1px solid #E2E8F0; border-radius: 6px; padding: 4px 8px; font-size: 12px; color: #1E293B; background: #fff; outline: none; }
+</style>
+</head>
+<body>
+
+<!-- Sidebar -->
+<nav class="sidebar">
+  <div class="sidebar-logo">캐스팅<span>엔</span></div>
+  <div class="sidebar-nav">
+    <div class="sidebar-section">워크스페이스</div>
+    <div class="sidebar-item">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+      대시보드
+    </div>
+    <div class="sidebar-item active">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+      고객
+    </div>
+    <div class="sidebar-item">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/></svg>
+      회사
+    </div>
+    <div class="sidebar-item">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+      딜
+    </div>
+    <div class="sidebar-section">자동화</div>
+    <div class="sidebar-item">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="M7 8l5 4-5 4"/><line x1="13" y1="16" x2="17" y2="16"/></svg>
+      시퀀스
+    </div>
+    <div class="sidebar-item">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+      이메일
+    </div>
+    <div class="sidebar-section">분석</div>
+    <div class="sidebar-item">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+      리포트
+    </div>
+  </div>
+</nav>
+
+<!-- Main -->
+<div class="main">
+  <!-- Top bar -->
+  <div class="topbar">
+    <div class="topbar-left">
+      <h1 class="topbar-title">고객</h1>
+      <div class="topbar-tabs">
+        <div class="topbar-tab active">전체 고객</div>
+        <div class="topbar-tab">최근 생성</div>
+        <div class="topbar-tab">MQL 이상</div>
+      </div>
+    </div>
+    <div class="topbar-right">
+      <span class="view-count">뷰 1 / 20</span>
+      <button class="btn-primary">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        고객 생성
+      </button>
+    </div>
+  </div>
+
+  <!-- Filter bar -->
+  <div class="filterbar">
+    <div class="search-box">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      <input type="text" placeholder="고객 검색...">
+    </div>
+    <button class="filter-btn">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>
+      필터
+    </button>
+    <button class="filter-btn">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+      컬럼 설정
+    </button>
+    <div class="filter-spacer"></div>
+    <button class="filter-btn">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+      전체 다운로드
+    </button>
+  </div>
+
+  <!-- Table -->
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th style="width:40px"><input type="checkbox" class="checkbox"></th>
+          <th>이름</th>
+          <th style="width:40px"></th>
+          <th>이메일</th>
+          <th>전화번호</th>
+          <th>포지션</th>
+          <th>직급</th>
+          <th>Lifecycle Stage</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td><input type="checkbox" class="checkbox"></td><td><div class="contact-name"><div class="avatar a1">김</div><span class="name-text">김태영</span></div></td><td><span class="linkedin-icon"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433a2.062 2.062 0 01-2.063-2.065 2.064 2.064 0 112.063 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/></svg></span></td><td>taeyoung.kim@wepun.com</td><td>010-3421-8834</td><td>경영지원</td><td>팀장</td><td><span class="badge badge-customer">Customer</span></td></tr>
+        <tr><td><input type="checkbox" class="checkbox"></td><td><div class="contact-name"><div class="avatar a2">박</div><span class="name-text">박서연</span></div></td><td><span class="linkedin-icon"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433a2.062 2.062 0 01-2.063-2.065 2.064 2.064 0 112.063 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/></svg></span></td><td>seoyeon.park@amicogen.com</td><td>010-9182-4421</td><td>총무</td><td>과장</td><td><span class="badge badge-sql">SQL</span></td></tr>
+        <tr><td><input type="checkbox" class="checkbox"></td><td><div class="contact-name"><div class="avatar a3">이</div><span class="name-text">이준호</span></div></td><td><span class="linkedin-icon"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433a2.062 2.062 0 01-2.063-2.065 2.064 2.064 0 112.063 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/></svg></span></td><td>junho.lee@42dot.ai</td><td>010-5567-2290</td><td>구매</td><td>부장</td><td><span class="badge badge-mql">MQL</span></td></tr>
+        <tr><td><input type="checkbox" class="checkbox"></td><td><div class="contact-name"><div class="avatar a4">최</div><span class="name-text">최미진</span></div></td><td><span class="linkedin-icon"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433a2.062 2.062 0 01-2.063-2.065 2.064 2.064 0 112.063 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/></svg></span></td><td>mijin.choi@gcnx.co.kr</td><td>010-8834-1102</td><td>경영지원</td><td>대리</td><td><span class="badge badge-lead">Lead</span></td></tr>
+        <tr><td><input type="checkbox" class="checkbox"></td><td><div class="contact-name"><div class="avatar a5">정</div><span class="name-text">정윤서</span></div></td><td><span class="linkedin-icon"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433a2.062 2.062 0 01-2.063-2.065 2.064 2.064 0 112.063 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/></svg></span></td><td>yunseo.jung@mistokorea.com</td><td>010-2291-7753</td><td>구매기획</td><td>사원</td><td><span class="badge badge-subscriber">Subscriber</span></td></tr>
+        <tr><td><input type="checkbox" class="checkbox"></td><td><div class="contact-name"><div class="avatar a1">한</div><span class="name-text">한지민</span></div></td><td><span class="linkedin-icon"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433a2.062 2.062 0 01-2.063-2.065 2.064 2.064 0 112.063 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/></svg></span></td><td>jimin.han@niceeng.co.kr</td><td>010-6643-9901</td><td>총무</td><td>차장</td><td><span class="badge badge-customer">Customer</span></td></tr>
+        <tr><td><input type="checkbox" class="checkbox"></td><td><div class="contact-name"><div class="avatar a2">오</div><span class="name-text">오성민</span></div></td><td><span class="linkedin-icon"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433a2.062 2.062 0 01-2.063-2.065 2.064 2.064 0 112.063 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/></svg></span></td><td>sungmin.oh@insuranceinst.or.kr</td><td>010-1123-5578</td><td>경영지원</td><td>팀장</td><td><span class="badge badge-sql">SQL</span></td></tr>
+        <tr><td><input type="checkbox" class="checkbox"></td><td><div class="contact-name"><div class="avatar a3">장</div><span class="name-text">장하늘</span></div></td><td><span class="linkedin-icon"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433a2.062 2.062 0 01-2.063-2.065 2.064 2.064 0 112.063 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/></svg></span></td><td>haneul.jang@kepco-fms.com</td><td>010-7782-3344</td><td>구매</td><td>부장</td><td><span class="badge badge-mql">MQL</span></td></tr>
+        <tr><td><input type="checkbox" class="checkbox"></td><td><div class="contact-name"><div class="avatar a4">윤</div><span class="name-text">윤도현</span></div></td><td><span class="linkedin-icon"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433a2.062 2.062 0 01-2.063-2.065 2.064 2.064 0 112.063 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/></svg></span></td><td>dohyun.yoon@bucketplace.net</td><td>010-4456-8827</td><td>총무기획</td><td>과장</td><td><span class="badge badge-lead">Lead</span></td></tr>
+        <tr><td><input type="checkbox" class="checkbox"></td><td><div class="contact-name"><div class="avatar a5">강</div><span class="name-text">강수빈</span></div></td><td><span class="linkedin-icon"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433a2.062 2.062 0 01-2.063-2.065 2.064 2.064 0 112.063 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/></svg></span></td><td>subin.kang@atechauto.co.kr</td><td>010-3398-6612</td><td>구매</td><td>대리</td><td><span class="badge badge-subscriber">Subscriber</span></td></tr>
+        <tr><td><input type="checkbox" class="checkbox"></td><td><div class="contact-name"><div class="avatar a1">송</div><span class="name-text">송현우</span></div></td><td><span class="linkedin-icon"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433a2.062 2.062 0 01-2.063-2.065 2.064 2.064 0 112.063 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/></svg></span></td><td>hyunwoo.song@calesta.energy</td><td>010-5521-0094</td><td>경영지원</td><td>사원</td><td><span class="badge badge-mql">MQL</span></td></tr>
+        <tr><td><input type="checkbox" class="checkbox"></td><td><div class="contact-name"><div class="avatar a2">임</div><span class="name-text">임소희</span></div></td><td><span class="linkedin-icon"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433a2.062 2.062 0 01-2.063-2.065 2.064 2.064 0 112.063 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/></svg></span></td><td>sohee.lim@londonbagel.kr</td><td>010-8877-2231</td><td>총무</td><td>팀장</td><td><span class="badge badge-customer">Customer</span></td></tr>
+        <tr><td><input type="checkbox" class="checkbox"></td><td><div class="contact-name"><div class="avatar a3">배</div><span class="name-text">배진우</span></div></td><td><span class="linkedin-icon"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433a2.062 2.062 0 01-2.063-2.065 2.064 2.064 0 112.063 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/></svg></span></td><td>jinwoo.bae@seanetworks.co.kr</td><td>010-2209-4456</td><td>구매기획</td><td>부장</td><td><span class="badge badge-sql">SQL</span></td></tr>
+        <tr><td><input type="checkbox" class="checkbox"></td><td><div class="contact-name"><div class="avatar a4">조</div><span class="name-text">조은지</span></div></td><td><span class="linkedin-icon"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433a2.062 2.062 0 01-2.063-2.065 2.064 2.064 0 112.063 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/></svg></span></td><td>eunji.cho@wepun.com</td><td>010-6654-1187</td><td>경영지원</td><td>차장</td><td><span class="badge badge-lead">Lead</span></td></tr>
+        <tr><td><input type="checkbox" class="checkbox"></td><td><div class="contact-name"><div class="avatar a5">신</div><span class="name-text">신동훈</span></div></td><td><span class="linkedin-icon"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433a2.062 2.062 0 01-2.063-2.065 2.064 2.064 0 112.063 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/></svg></span></td><td>donghun.shin@gcnx.co.kr</td><td>010-9901-3345</td><td>구매</td><td>과장</td><td><span class="badge badge-mql">MQL</span></td></tr>
+        <tr><td><input type="checkbox" class="checkbox"></td><td><div class="contact-name"><div class="avatar a1">류</div><span class="name-text">류지현</span></div></td><td><span class="linkedin-icon"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433a2.062 2.062 0 01-2.063-2.065 2.064 2.064 0 112.063 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/></svg></span></td><td>jihyun.ryu@42dot.ai</td><td>010-1234-5678</td><td>총무기획</td><td>대리</td><td><span class="badge badge-subscriber">Subscriber</span></td></tr>
+        <tr><td><input type="checkbox" class="checkbox"></td><td><div class="contact-name"><div class="avatar a2">홍</div><span class="name-text">홍석준</span></div></td><td><span class="linkedin-icon"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433a2.062 2.062 0 01-2.063-2.065 2.064 2.064 0 112.063 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/></svg></span></td><td>sukjun.hong@kepco-fms.com</td><td>010-8765-4321</td><td>경영지원</td><td>팀장</td><td><span class="badge badge-customer">Customer</span></td></tr>
+        <tr><td><input type="checkbox" class="checkbox"></td><td><div class="contact-name"><div class="avatar a3">문</div><span class="name-text">문예린</span></div></td><td><span class="linkedin-icon"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433a2.062 2.062 0 01-2.063-2.065 2.064 2.064 0 112.063 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/></svg></span></td><td>yerin.moon@amicogen.com</td><td>010-3344-7789</td><td>구매</td><td>사원</td><td><span class="badge badge-lead">Lead</span></td></tr>
+        <tr><td><input type="checkbox" class="checkbox"></td><td><div class="contact-name"><div class="avatar a4">권</div><span class="name-text">권태호</span></div></td><td><span class="linkedin-icon"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433a2.062 2.062 0 01-2.063-2.065 2.064 2.064 0 112.063 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/></svg></span></td><td>taeho.kwon@niceeng.co.kr</td><td>010-5566-9900</td><td>총무</td><td>부장</td><td><span class="badge badge-sql">SQL</span></td></tr>
+        <tr><td><input type="checkbox" class="checkbox"></td><td><div class="contact-name"><div class="avatar a5">양</div><span class="name-text">양서윤</span></div></td><td><span class="linkedin-icon"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433a2.062 2.062 0 01-2.063-2.065 2.064 2.064 0 112.063 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/></svg></span></td><td>seoyoon.yang@bucketplace.net</td><td>010-7788-1122</td><td>경영지원</td><td>과장</td><td><span class="badge badge-mql">MQL</span></td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Pagination -->
+  <div class="pagination">
+    <div class="pagination-info">
+      총 <strong>5,060</strong>명의 고객 &middot; 페이지 <strong>1</strong> / 102
+    </div>
+    <div class="pagination-controls">
+      <div class="per-page">
+        페이지당
+        <select><option>50</option><option>100</option><option>200</option></select>
+      </div>
+      <div class="page-btn disabled">&lsaquo;</div>
+      <div class="page-btn active">1</div>
+      <div class="page-btn">2</div>
+      <div class="page-btn">3</div>
+      <div class="page-btn">...</div>
+      <div class="page-btn">102</div>
+      <div class="page-btn">&rsaquo;</div>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>

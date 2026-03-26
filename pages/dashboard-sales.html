@@ -1,0 +1,379 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>캐스팅엔 CRM - 세일즈 대시보드</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #F0F9FF; color: #1E293B; font-size: 14px; }
+
+  .sidebar { width: 240px; height: 100vh; background: #1A2332; position: fixed; left: 0; top: 0; padding: 20px 0; display: flex; flex-direction: column; z-index: 10; }
+  .sidebar-logo { color: #fff; font-size: 18px; font-weight: 700; padding: 0 20px 24px; border-bottom: 1px solid rgba(255,255,255,0.08); }
+  .sidebar-logo span { color: #0891B2; }
+  .sidebar-nav { padding: 16px 0; flex: 1; }
+  .sidebar-item { display: flex; align-items: center; gap: 10px; padding: 10px 20px; color: #94A3B8; font-size: 13px; cursor: pointer; transition: all 0.15s; }
+  .sidebar-item:hover { background: rgba(255,255,255,0.05); color: #CBD5E1; }
+  .sidebar-item.active { background: rgba(8,145,178,0.15); color: #0891B2; border-right: 3px solid #0891B2; }
+  .sidebar-item svg { width: 18px; height: 18px; flex-shrink: 0; }
+  .sidebar-section { padding: 16px 20px 8px; font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em; color: #475569; }
+
+  .main { margin-left: 240px; min-height: 100vh; }
+
+  .topbar { background: #fff; border-bottom: 1px solid #E2E8F0; padding: 16px 32px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 5; }
+  .topbar-left { display: flex; align-items: center; gap: 16px; }
+  .topbar-title { font-size: 20px; font-weight: 700; color: #1A2332; }
+  .topbar-tabs { display: flex; gap: 0; margin-left: 16px; }
+  .topbar-tab { padding: 8px 16px; font-size: 13px; color: #64748B; cursor: pointer; border-bottom: 2px solid transparent; transition: all 0.15s; }
+  .topbar-tab.active { color: #0891B2; border-bottom-color: #0891B2; font-weight: 600; }
+  .period-select { border: 1px solid #E2E8F0; border-radius: 8px; padding: 6px 12px; font-size: 13px; color: #1E293B; background: #fff; outline: none; cursor: pointer; }
+
+  .content { padding: 24px 32px; }
+
+  .kpi-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 24px; }
+  .kpi-card { background: #fff; border-radius: 12px; padding: 20px 24px; box-shadow: 0 1px 3px rgba(0,0,0,0.04); border: 1px solid #E2E8F0; }
+  .kpi-label { font-size: 12px; color: #64748B; font-weight: 500; text-transform: uppercase; letter-spacing: 0.03em; margin-bottom: 8px; }
+  .kpi-value { font-size: 28px; font-weight: 700; color: #1A2332; margin-bottom: 4px; }
+  .kpi-sub { font-size: 12px; color: #64748B; }
+  .kpi-change { font-size: 12px; font-weight: 600; display: inline-flex; align-items: center; gap: 4px; padding: 2px 8px; border-radius: 20px; margin-top: 6px; }
+  .kpi-change.up { color: #059669; background: #D1FAE5; }
+  .kpi-change.down { color: #DC2626; background: #FEE2E2; }
+
+  .chart-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px; }
+  .chart-card { background: #fff; border-radius: 12px; padding: 24px; box-shadow: 0 1px 3px rgba(0,0,0,0.04); border: 1px solid #E2E8F0; }
+  .chart-card.full { grid-column: 1 / -1; }
+  .chart-title { font-size: 14px; font-weight: 700; color: #1A2332; margin-bottom: 20px; display: flex; align-items: center; justify-content: space-between; }
+  .chart-title .subtitle { font-size: 12px; color: #64748B; font-weight: 400; }
+
+  /* Pipeline stages bar */
+  .pipeline-stages { display: flex; flex-direction: column; gap: 14px; }
+  .stage-row { display: flex; align-items: center; gap: 12px; }
+  .stage-label { width: 100px; font-size: 12px; color: #64748B; text-align: right; flex-shrink: 0; }
+  .stage-bar-wrap { flex: 1; display: flex; align-items: center; gap: 8px; }
+  .stage-bar { height: 28px; border-radius: 6px; display: flex; align-items: center; padding: 0 10px; font-size: 11px; font-weight: 600; color: #fff; min-width: 40px; }
+  .stage-meta { font-size: 11px; color: #64748B; white-space: nowrap; }
+
+  /* Leaderboard */
+  .leaderboard { display: flex; flex-direction: column; gap: 16px; }
+  .leader-row { display: flex; align-items: center; gap: 16px; padding: 12px 16px; background: #F8FAFC; border-radius: 10px; }
+  .leader-rank { width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 700; flex-shrink: 0; }
+  .leader-rank.gold { background: #FEF3C7; color: #D97706; }
+  .leader-rank.silver { background: #E2E8F0; color: #475569; }
+  .leader-rank.bronze { background: #FED7AA; color: #C2410C; }
+  .leader-info { flex: 1; }
+  .leader-name { font-weight: 600; color: #1E293B; font-size: 14px; }
+  .leader-stats { display: flex; gap: 20px; }
+  .leader-stat { text-align: center; }
+  .leader-stat-value { font-size: 16px; font-weight: 700; color: #1A2332; }
+  .leader-stat-label { font-size: 10px; color: #94A3B8; text-transform: uppercase; }
+
+  /* Funnel */
+  .funnel-h { display: flex; flex-direction: column; gap: 8px; }
+  .funnel-row { display: flex; align-items: center; gap: 12px; }
+  .funnel-row-label { width: 120px; font-size: 12px; color: #64748B; text-align: right; flex-shrink: 0; }
+  .funnel-row-bar { height: 32px; border-radius: 6px; display: flex; align-items: center; padding: 0 12px; font-size: 12px; font-weight: 600; color: #fff; }
+  .funnel-row-rate { font-size: 11px; color: #0891B2; font-weight: 600; margin-left: 8px; }
+
+  /* Alert table */
+  .alert-table { width: 100%; border-collapse: collapse; }
+  .alert-table thead th { font-size: 11px; color: #64748B; text-transform: uppercase; letter-spacing: 0.03em; padding: 8px 12px; text-align: left; border-bottom: 1px solid #E2E8F0; font-weight: 600; }
+  .alert-table tbody td { padding: 10px 12px; font-size: 13px; border-bottom: 1px solid #F1F5F9; }
+  .alert-table tbody tr:last-child td { border-bottom: none; }
+  .alert-table tbody tr.danger { background: #FEF2F2; }
+  .alert-table tbody tr.warning { background: #FFFBEB; }
+  .sla-badge { padding: 2px 8px; border-radius: 12px; font-size: 11px; font-weight: 600; }
+  .sla-danger { background: #EF4444; color: #fff; }
+  .sla-warning { background: #F59E0B; color: #fff; }
+
+  /* Dual bar chart */
+  .dual-bar { display: flex; align-items: flex-end; gap: 16px; height: 180px; padding-top: 20px; }
+  .dual-bar-group { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 4px; }
+  .dual-bars { display: flex; gap: 4px; align-items: flex-end; height: 140px; }
+  .dual-bar-item { width: 24px; border-radius: 4px 4px 0 0; display: flex; align-items: flex-start; justify-content: center; padding-top: 4px; font-size: 9px; font-weight: 600; color: #fff; }
+  .dual-bar-label { font-size: 11px; color: #64748B; }
+  .dual-legend { display: flex; gap: 16px; margin-bottom: 12px; }
+  .dual-legend-item { display: flex; align-items: center; gap: 6px; font-size: 12px; color: #64748B; }
+  .dual-legend-dot { width: 10px; height: 10px; border-radius: 3px; }
+
+  /* Stacked bar */
+  .stacked-bar-chart { display: flex; flex-direction: column; gap: 10px; }
+  .stacked-row { display: flex; align-items: center; gap: 12px; }
+  .stacked-label { width: 60px; font-size: 12px; color: #64748B; text-align: right; flex-shrink: 0; }
+  .stacked-track { flex: 1; height: 28px; display: flex; border-radius: 6px; overflow: hidden; }
+  .stacked-seg { height: 100%; display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 600; color: #fff; }
+  .stacked-total { font-size: 11px; color: #1E293B; font-weight: 600; width: 60px; }
+
+  /* Donut */
+  .donut-wrap { display: flex; align-items: center; gap: 32px; }
+  .donut-svg { width: 140px; height: 140px; }
+  .donut-center { font-size: 18px; font-weight: 700; fill: #1A2332; }
+  .donut-legend { display: flex; flex-direction: column; gap: 8px; }
+  .donut-legend-item { display: flex; align-items: center; gap: 8px; font-size: 13px; }
+  .donut-legend-dot { width: 10px; height: 10px; border-radius: 3px; flex-shrink: 0; }
+
+  .chart-table { width: 100%; border-collapse: collapse; margin-top: 16px; }
+  .chart-table thead th { font-size: 11px; color: #64748B; text-transform: uppercase; letter-spacing: 0.03em; padding: 8px 12px; text-align: left; border-bottom: 1px solid #E2E8F0; font-weight: 600; }
+  .chart-table tbody td { padding: 8px 12px; font-size: 13px; border-bottom: 1px solid #F1F5F9; }
+  .chart-table tbody tr:last-child td { border-bottom: none; }
+</style>
+</head>
+<body>
+
+<nav class="sidebar">
+  <div class="sidebar-logo">캐스팅<span>엔</span></div>
+  <div class="sidebar-nav">
+    <div class="sidebar-section">워크스페이스</div>
+    <div class="sidebar-item active">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+      대시보드
+    </div>
+    <div class="sidebar-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>고객</div>
+    <div class="sidebar-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/></svg>회사</div>
+    <div class="sidebar-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>딜</div>
+    <div class="sidebar-section">자동화</div>
+    <div class="sidebar-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="M7 8l5 4-5 4"/><line x1="13" y1="16" x2="17" y2="16"/></svg>시퀀스</div>
+    <div class="sidebar-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>이메일</div>
+    <div class="sidebar-section">분석</div>
+    <div class="sidebar-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>리포트</div>
+  </div>
+</nav>
+
+<div class="main">
+  <div class="topbar">
+    <div class="topbar-left">
+      <h1 class="topbar-title">대시보드</h1>
+      <div class="topbar-tabs">
+        <div class="topbar-tab">마케팅</div>
+        <div class="topbar-tab active">세일즈</div>
+        <div class="topbar-tab">경영진</div>
+      </div>
+    </div>
+    <select class="period-select">
+      <option>이번 달 (2026.03)</option>
+      <option>지난 달</option>
+      <option>이번 분기</option>
+    </select>
+  </div>
+
+  <div class="content">
+    <!-- KPI -->
+    <div class="kpi-grid">
+      <div class="kpi-card">
+        <div class="kpi-label">월간 신규 딜</div>
+        <div class="kpi-value">34건</div>
+        <span class="kpi-change up">+21% vs 지난달</span>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-label">Closed Won</div>
+        <div class="kpi-value">12건</div>
+        <div class="kpi-sub">8.4억원</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-label">평균 딜 사이클</div>
+        <div class="kpi-value">72일</div>
+        <span class="kpi-change down">+5일 vs 지난달</span>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-label">전환율</div>
+        <div class="kpi-value">35%</div>
+        <span class="kpi-change up">+3%p vs 지난달</span>
+      </div>
+    </div>
+
+    <div class="chart-grid">
+      <!-- 1. Pipeline Summary -->
+      <div class="chart-card">
+        <div class="chart-title">파이프라인 현황 서머리</div>
+        <div class="pipeline-stages">
+          <div class="stage-row">
+            <div class="stage-label">리드 접수</div>
+            <div class="stage-bar-wrap">
+              <div class="stage-bar" style="width:100%; background: linear-gradient(90deg, #94A3B8, #CBD5E1);">18건</div>
+              <div class="stage-meta">2.1억</div>
+            </div>
+          </div>
+          <div class="stage-row">
+            <div class="stage-label">미팅 예정</div>
+            <div class="stage-bar-wrap">
+              <div class="stage-bar" style="width:72%; background: linear-gradient(90deg, #0891B2, #06B6D4);">13건</div>
+              <div class="stage-meta">3.8억</div>
+            </div>
+          </div>
+          <div class="stage-row">
+            <div class="stage-label">제안 진행</div>
+            <div class="stage-bar-wrap">
+              <div class="stage-bar" style="width:50%; background: linear-gradient(90deg, #8B5CF6, #A78BFA);">9건</div>
+              <div class="stage-meta">4.2억</div>
+            </div>
+          </div>
+          <div class="stage-row">
+            <div class="stage-label">견적/협상</div>
+            <div class="stage-bar-wrap">
+              <div class="stage-bar" style="width:33%; background: linear-gradient(90deg, #F59E0B, #FBBF24);">6건</div>
+              <div class="stage-meta">3.6억</div>
+            </div>
+          </div>
+          <div class="stage-row">
+            <div class="stage-label">계약 완료</div>
+            <div class="stage-bar-wrap">
+              <div class="stage-bar" style="width:22%; background: linear-gradient(90deg, #10B981, #34D399);">4건</div>
+              <div class="stage-meta">2.8억</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 2. Leaderboard -->
+      <div class="chart-card">
+        <div class="chart-title">담당자별 리더보드</div>
+        <div class="leaderboard">
+          <div class="leader-row">
+            <div class="leader-rank gold">1</div>
+            <div class="leader-info"><div class="leader-name">유제욱</div></div>
+            <div class="leader-stats">
+              <div class="leader-stat"><div class="leader-stat-value">14</div><div class="leader-stat-label">딜수</div></div>
+              <div class="leader-stat"><div class="leader-stat-value">4.2억</div><div class="leader-stat-label">금액</div></div>
+              <div class="leader-stat"><div class="leader-stat-value">42%</div><div class="leader-stat-label">전환율</div></div>
+            </div>
+          </div>
+          <div class="leader-row">
+            <div class="leader-rank silver">2</div>
+            <div class="leader-info"><div class="leader-name">박경재</div></div>
+            <div class="leader-stats">
+              <div class="leader-stat"><div class="leader-stat-value">11</div><div class="leader-stat-label">딜수</div></div>
+              <div class="leader-stat"><div class="leader-stat-value">2.8억</div><div class="leader-stat-label">금액</div></div>
+              <div class="leader-stat"><div class="leader-stat-value">36%</div><div class="leader-stat-label">전환율</div></div>
+            </div>
+          </div>
+          <div class="leader-row">
+            <div class="leader-rank bronze">3</div>
+            <div class="leader-info"><div class="leader-name">오정희</div></div>
+            <div class="leader-stats">
+              <div class="leader-stat"><div class="leader-stat-value">9</div><div class="leader-stat-label">딜수</div></div>
+              <div class="leader-stat"><div class="leader-stat-value">1.4억</div><div class="leader-stat-label">금액</div></div>
+              <div class="leader-stat"><div class="leader-stat-value">28%</div><div class="leader-stat-label">전환율</div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 3. Stage Funnel -->
+      <div class="chart-card">
+        <div class="chart-title">스테이지별 전환율</div>
+        <div class="funnel-h">
+          <div class="funnel-row">
+            <div class="funnel-row-label">리드 → MQL</div>
+            <div class="funnel-row-bar" style="width:78%; background: linear-gradient(90deg, #0891B2, #06B6D4);">78%</div>
+          </div>
+          <div class="funnel-row">
+            <div class="funnel-row-label">MQL → SAL</div>
+            <div class="funnel-row-bar" style="width:29%; background: linear-gradient(90deg, #8B5CF6, #A78BFA);">29%</div>
+          </div>
+          <div class="funnel-row">
+            <div class="funnel-row-label">SAL → SQL</div>
+            <div class="funnel-row-bar" style="width:64%; background: linear-gradient(90deg, #F59E0B, #FBBF24);">64%</div>
+          </div>
+          <div class="funnel-row">
+            <div class="funnel-row-label">SQL → 제안</div>
+            <div class="funnel-row-bar" style="width:52%; background: linear-gradient(90deg, #10B981, #34D399);">52%</div>
+          </div>
+          <div class="funnel-row">
+            <div class="funnel-row-label">제안 → Won</div>
+            <div class="funnel-row-bar" style="width:35%; background: linear-gradient(90deg, #EF4444, #F87171);">35%</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 4. Deal Stagnation Alert -->
+      <div class="chart-card">
+        <div class="chart-title">딜 정체 경고 <span class="subtitle">SLA 초과 딜</span></div>
+        <table class="alert-table">
+          <thead><tr><th>회사명</th><th>딜명</th><th>스테이지</th><th>정체일</th><th>SLA</th></tr></thead>
+          <tbody>
+            <tr class="danger"><td>GC녹십자</td><td>구매시스템 도입</td><td>견적/협상</td><td>28일</td><td><span class="sla-badge sla-danger">14일 초과</span></td></tr>
+            <tr class="danger"><td>한전FMS</td><td>Enterprise 전환</td><td>제안 진행</td><td>22일</td><td><span class="sla-badge sla-danger">8일 초과</span></td></tr>
+            <tr class="warning"><td>버킷플레이스</td><td>Pro 업그레이드</td><td>미팅 예정</td><td>12일</td><td><span class="sla-badge sla-warning">5일 초과</span></td></tr>
+            <tr class="warning"><td>세아네트웍스</td><td>연간 계약</td><td>견적/협상</td><td>16일</td><td><span class="sla-badge sla-warning">2일 초과</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- 5. Monthly New vs Closed Won -->
+      <div class="chart-card">
+        <div class="chart-title">
+          월별 신규딜 vs Closed Won
+          <div class="dual-legend">
+            <div class="dual-legend-item"><div class="dual-legend-dot" style="background:#0891B2"></div>신규딜</div>
+            <div class="dual-legend-item"><div class="dual-legend-dot" style="background:#10B981"></div>Closed Won</div>
+          </div>
+        </div>
+        <div class="dual-bar">
+          <div class="dual-bar-group"><div class="dual-bars"><div class="dual-bar-item" style="height:60%; background:#0891B2;">22</div><div class="dual-bar-item" style="height:30%; background:#10B981;">8</div></div><div class="dual-bar-label">10월</div></div>
+          <div class="dual-bar-group"><div class="dual-bars"><div class="dual-bar-item" style="height:70%; background:#0891B2;">26</div><div class="dual-bar-item" style="height:35%; background:#10B981;">9</div></div><div class="dual-bar-label">11월</div></div>
+          <div class="dual-bar-group"><div class="dual-bars"><div class="dual-bar-item" style="height:50%; background:#0891B2;">18</div><div class="dual-bar-item" style="height:40%; background:#10B981;">10</div></div><div class="dual-bar-label">12월</div></div>
+          <div class="dual-bar-group"><div class="dual-bars"><div class="dual-bar-item" style="height:75%; background:#0891B2;">28</div><div class="dual-bar-item" style="height:30%; background:#10B981;">7</div></div><div class="dual-bar-label">1월</div></div>
+          <div class="dual-bar-group"><div class="dual-bars"><div class="dual-bar-item" style="height:80%; background:#0891B2;">30</div><div class="dual-bar-item" style="height:45%; background:#10B981;">11</div></div><div class="dual-bar-label">2월</div></div>
+          <div class="dual-bar-group"><div class="dual-bars"><div class="dual-bar-item" style="height:90%; background:#0891B2;">34</div><div class="dual-bar-item" style="height:50%; background:#10B981;">12</div></div><div class="dual-bar-label">3월</div></div>
+        </div>
+      </div>
+
+      <!-- 6. Expected Contract Month Pipeline (Stacked) -->
+      <div class="chart-card">
+        <div class="chart-title">
+          예상 계약월별 파이프라인
+          <div class="dual-legend">
+            <div class="dual-legend-item"><div class="dual-legend-dot" style="background:#0891B2"></div>확정</div>
+            <div class="dual-legend-item"><div class="dual-legend-dot" style="background:#F59E0B"></div>가능성 높음</div>
+            <div class="dual-legend-item"><div class="dual-legend-dot" style="background:#CBD5E1"></div>탐색중</div>
+          </div>
+        </div>
+        <div class="stacked-bar-chart">
+          <div class="stacked-row"><div class="stacked-label">3월</div><div class="stacked-track"><div class="stacked-seg" style="width:55%; background:#0891B2;">2.8억</div><div class="stacked-seg" style="width:30%; background:#F59E0B;">1.5억</div><div class="stacked-seg" style="width:15%; background:#CBD5E1;">0.8억</div></div><div class="stacked-total">5.1억</div></div>
+          <div class="stacked-row"><div class="stacked-label">4월</div><div class="stacked-track"><div class="stacked-seg" style="width:35%; background:#0891B2;">1.8억</div><div class="stacked-seg" style="width:40%; background:#F59E0B;">2.1억</div><div class="stacked-seg" style="width:25%; background:#CBD5E1;">1.3억</div></div><div class="stacked-total">5.2억</div></div>
+          <div class="stacked-row"><div class="stacked-label">5월</div><div class="stacked-track"><div class="stacked-seg" style="width:20%; background:#0891B2;">1.2억</div><div class="stacked-seg" style="width:35%; background:#F59E0B;">2.0억</div><div class="stacked-seg" style="width:45%; background:#CBD5E1;">2.6억</div></div><div class="stacked-total">5.8억</div></div>
+          <div class="stacked-row"><div class="stacked-label">6월</div><div class="stacked-track"><div class="stacked-seg" style="width:10%; background:#0891B2;">0.6억</div><div class="stacked-seg" style="width:30%; background:#F59E0B;">1.8억</div><div class="stacked-seg" style="width:60%; background:#CBD5E1;">3.6억</div></div><div class="stacked-total">6.0억</div></div>
+        </div>
+      </div>
+
+      <!-- 7. Win/Loss Analysis -->
+      <div class="chart-card full">
+        <div class="chart-title">Win / Loss 분석</div>
+        <div style="display:flex; gap: 40px; align-items: flex-start;">
+          <div class="donut-wrap">
+            <svg class="donut-svg" viewBox="0 0 160 160">
+              <!-- Won: 35% = 126deg -->
+              <circle cx="80" cy="80" r="60" fill="none" stroke="#10B981" stroke-width="20" stroke-dasharray="131.9 213.6" stroke-dashoffset="53.4" transform="rotate(-90 80 80)"/>
+              <!-- Lost: 45% -->
+              <circle cx="80" cy="80" r="60" fill="none" stroke="#EF4444" stroke-width="20" stroke-dasharray="169.6 213.6" stroke-dashoffset="-78.5" transform="rotate(-90 80 80)"/>
+              <!-- In Progress: 20% -->
+              <circle cx="80" cy="80" r="60" fill="none" stroke="#F59E0B" stroke-width="20" stroke-dasharray="75.4 213.6" stroke-dashoffset="-248.1" transform="rotate(-90 80 80)"/>
+              <text x="80" y="76" text-anchor="middle" class="donut-center">34건</text>
+              <text x="80" y="94" text-anchor="middle" fill="#64748B" font-size="11">총 딜</text>
+            </svg>
+            <div class="donut-legend">
+              <div class="donut-legend-item"><div class="donut-legend-dot" style="background:#10B981"></div>Won 12건 (35%)</div>
+              <div class="donut-legend-item"><div class="donut-legend-dot" style="background:#EF4444"></div>Lost 15건 (45%)</div>
+              <div class="donut-legend-item"><div class="donut-legend-dot" style="background:#F59E0B"></div>진행중 7건 (20%)</div>
+            </div>
+          </div>
+          <div style="flex:1;">
+            <div style="font-size:13px; font-weight:600; color:#1E293B; margin-bottom:12px;">실패 사유 분석</div>
+            <table class="chart-table">
+              <thead><tr><th>사유</th><th>건수</th><th>비율</th></tr></thead>
+              <tbody>
+                <tr><td>예산 부족</td><td>5건</td><td>33%</td></tr>
+                <tr><td>경쟁사 선택</td><td>4건</td><td>27%</td></tr>
+                <tr><td>내부 우선순위 변경</td><td>3건</td><td>20%</td></tr>
+                <tr><td>의사결정 지연</td><td>2건</td><td>13%</td></tr>
+                <tr><td>기타</td><td>1건</td><td>7%</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>

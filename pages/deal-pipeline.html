@@ -1,0 +1,612 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>캐스팅엔 CRM - 딜 파이프라인</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  :root {
+    --navy: #1A2332;
+    --teal: #0891B2;
+    --amber: #F59E0B;
+    --bg: #F0F9FF;
+    --slate: #1E293B;
+    --gray: #64748B;
+    --sidebar-w: 240px;
+    --topbar-h: 56px;
+  }
+  body { font-family: system-ui, -apple-system, sans-serif; background: var(--bg); color: var(--slate); display: flex; height: 100vh; overflow: hidden; }
+
+  /* ── Sidebar (compact for this page) ── */
+  .sidebar {
+    width: var(--sidebar-w); min-width: var(--sidebar-w);
+    background: var(--navy); color: #CBD5E1;
+    display: flex; flex-direction: column; overflow-y: auto;
+    scrollbar-width: thin; scrollbar-color: #334155 transparent;
+  }
+  .sidebar::-webkit-scrollbar { width: 5px; }
+  .sidebar::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
+  .sidebar-logo { padding: 20px 16px 16px; display: flex; align-items: center; gap: 10px; border-bottom: 1px solid #2D3B4E; }
+  .sidebar-logo .logo-icon { width: 32px; height: 32px; background: linear-gradient(135deg, var(--teal), #06B6D4); border-radius: 8px; display: flex; align-items: center; justify-content: center; }
+  .sidebar-logo .logo-icon svg { width: 18px; height: 18px; }
+  .sidebar-logo span { font-size: 15px; font-weight: 700; color: #F1F5F9; }
+  .sidebar-nav { padding: 8px 0; flex: 1; }
+  .nav-section { margin-bottom: 2px; }
+  .nav-item { display: flex; align-items: center; gap: 10px; padding: 9px 16px; font-size: 13px; cursor: pointer; transition: all 0.15s; color: #94A3B8; position: relative; user-select: none; }
+  .nav-item:hover { background: rgba(255,255,255,0.06); color: #E2E8F0; }
+  .nav-item.active { background: rgba(8,145,178,0.15); color: #22D3EE; }
+  .nav-item.active::before { content: ''; position: absolute; left: 0; top: 50%; transform: translateY(-50%); width: 3px; height: 24px; background: var(--teal); border-radius: 0 3px 3px 0; }
+  .nav-item svg { width: 18px; height: 18px; flex-shrink: 0; opacity: 0.7; }
+  .nav-item.active svg { opacity: 1; }
+  .nav-item .label { flex: 1; }
+  .nav-item .chevron { width: 16px; height: 16px; transition: transform 0.2s; opacity: 0.5; }
+  .nav-item .chevron.open { transform: rotate(90deg); }
+  .sub-menu { max-height: 0; overflow: hidden; transition: max-height 0.25s ease; }
+  .sub-menu.open { max-height: 600px; }
+  .sub-item { display: block; padding: 7px 16px 7px 44px; font-size: 12.5px; color: #64748B; cursor: pointer; transition: all 0.15s; text-decoration: none; }
+  .sub-item:hover { color: #CBD5E1; background: rgba(255,255,255,0.04); }
+  .sub-item.active { color: #22D3EE; }
+
+  /* ── Main ── */
+  .main { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+
+  /* ── Page Header ── */
+  .page-header {
+    background: #fff; border-bottom: 1px solid #E2E8F0; padding: 0 24px; flex-shrink: 0;
+  }
+  .page-header-top {
+    display: flex; align-items: center; gap: 16px; padding: 16px 0 0;
+  }
+  .page-title { font-size: 20px; font-weight: 700; color: var(--slate); }
+  .page-header-actions { margin-left: auto; display: flex; align-items: center; gap: 8px; }
+  .btn { display: inline-flex; align-items: center; gap: 6px; padding: 8px 16px; border-radius: 8px; font-size: 13px; font-weight: 500; cursor: pointer; border: none; transition: all 0.15s; }
+  .btn-primary { background: var(--teal); color: #fff; }
+  .btn-primary:hover { background: #0E7490; }
+  .btn-ghost { background: transparent; color: var(--gray); border: 1px solid #E2E8F0; }
+  .btn-ghost:hover { background: #F8FAFC; border-color: #CBD5E1; }
+  .btn svg { width: 16px; height: 16px; }
+
+  /* Tabs */
+  .page-tabs {
+    display: flex; gap: 0; margin-top: 12px;
+  }
+  .page-tab {
+    padding: 10px 16px;
+    font-size: 13px; color: var(--gray);
+    cursor: pointer; border-bottom: 2px solid transparent;
+    transition: all 0.15s; white-space: nowrap;
+  }
+  .page-tab:hover { color: var(--slate); }
+  .page-tab.active { color: var(--teal); border-bottom-color: var(--teal); font-weight: 600; }
+
+  /* View toggle */
+  .view-toggle {
+    display: flex; align-items: center; gap: 2px;
+    background: #F1F5F9; border-radius: 6px; padding: 2px; margin-left: auto;
+  }
+  .view-btn {
+    width: 32px; height: 28px; border: none; background: transparent;
+    border-radius: 4px; cursor: pointer; display: flex;
+    align-items: center; justify-content: center; color: var(--gray);
+    transition: all 0.15s;
+  }
+  .view-btn.active { background: #fff; color: var(--teal); box-shadow: 0 1px 2px rgba(0,0,0,0.08); }
+  .view-btn svg { width: 16px; height: 16px; }
+  .view-count { font-size: 12px; color: var(--gray); margin-right: 8px; }
+
+  /* ── Filter Bar ── */
+  .filter-bar {
+    display: flex; align-items: center; gap: 8px; padding: 12px 24px;
+    background: #fff; border-bottom: 1px solid #E2E8F0; flex-shrink: 0;
+  }
+  .filter-chip {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 6px 12px; border-radius: 6px;
+    font-size: 12px; color: var(--slate);
+    background: #F8FAFC; border: 1px solid #E2E8F0;
+    cursor: pointer; transition: all 0.15s; white-space: nowrap;
+  }
+  .filter-chip:hover { border-color: var(--teal); background: #F0F9FF; }
+  .filter-chip svg { width: 14px; height: 14px; color: var(--gray); }
+  .filter-chip .val { color: var(--teal); font-weight: 500; }
+  .filter-divider { width: 1px; height: 24px; background: #E2E8F0; }
+
+  /* ── Kanban Board ── */
+  .kanban-wrapper {
+    flex: 1; overflow-x: auto; overflow-y: hidden;
+    padding: 16px 24px 24px;
+  }
+  .kanban-board {
+    display: flex; gap: 12px;
+    height: 100%; min-width: max-content;
+  }
+  .kanban-col {
+    width: 280px; min-width: 280px;
+    display: flex; flex-direction: column;
+    background: #F8FAFC; border-radius: 12px;
+    max-height: 100%;
+  }
+  .col-header {
+    padding: 12px 14px; flex-shrink: 0;
+    border-bottom: 1px solid #E2E8F0;
+  }
+  .col-header-top {
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .col-title {
+    font-size: 13px; font-weight: 600; color: var(--slate);
+    display: flex; align-items: center; gap: 6px;
+  }
+  .col-count {
+    font-size: 11px; font-weight: 600; color: #fff;
+    background: var(--gray); border-radius: 10px;
+    padding: 1px 7px; min-width: 20px; text-align: center;
+  }
+  .col-amount {
+    font-size: 12px; color: var(--gray); margin-top: 4px;
+  }
+  .col-sla {
+    display: inline-flex; align-items: center; gap: 4px;
+    font-size: 10px; color: #EF4444; margin-top: 4px;
+    background: #FEF2F2; padding: 2px 6px; border-radius: 4px;
+  }
+  .col-sla svg { width: 12px; height: 12px; }
+  .col-add-btn {
+    width: 100%; border: none; background: transparent;
+    padding: 8px; font-size: 12px; color: var(--gray);
+    cursor: pointer; display: flex; align-items: center;
+    justify-content: center; gap: 4px; transition: color 0.15s;
+  }
+  .col-add-btn:hover { color: var(--teal); }
+  .col-add-btn svg { width: 14px; height: 14px; }
+
+  .col-body {
+    flex: 1; overflow-y: auto; padding: 8px 8px 4px;
+    scrollbar-width: thin; scrollbar-color: #CBD5E1 transparent;
+  }
+  .col-body::-webkit-scrollbar { width: 4px; }
+  .col-body::-webkit-scrollbar-thumb { background: #CBD5E1; border-radius: 4px; }
+
+  /* ── Deal Card ── */
+  .deal-card {
+    background: #fff; border-radius: 10px;
+    padding: 14px; margin-bottom: 8px;
+    border: 1px solid #E2E8F0;
+    cursor: pointer; transition: all 0.15s;
+    position: relative;
+  }
+  .deal-card:hover { border-color: var(--teal); box-shadow: 0 2px 8px rgba(8,145,178,0.1); transform: translateY(-1px); }
+  .deal-card.sla-warning { border-left: 3px solid #EF4444; }
+  .deal-name { font-size: 13px; font-weight: 600; color: var(--slate); margin-bottom: 6px; line-height: 1.3; }
+  .deal-company { font-size: 11px; color: var(--gray); margin-bottom: 10px; display: flex; align-items: center; gap: 4px; }
+  .deal-company svg { width: 12px; height: 12px; }
+  .deal-amount { font-size: 18px; font-weight: 700; color: var(--slate); margin-bottom: 8px; }
+  .deal-meta { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 10px; }
+  .deal-tag {
+    display: inline-flex; align-items: center;
+    padding: 2px 8px; border-radius: 4px;
+    font-size: 10px; font-weight: 600;
+  }
+  .tag-probability { background: #DBEAFE; color: #1D4ED8; }
+  .tag-probability.high { background: #DCFCE7; color: #15803D; }
+  .tag-probability.mid { background: #FEF3C7; color: #B45309; }
+  .tag-probability.low { background: #FEE2E2; color: #DC2626; }
+  .tag-size { background: #F1F5F9; color: var(--gray); }
+  .tag-month { background: #EDE9FE; color: #7C3AED; }
+  .tag-mrr { background: #ECFDF5; color: #059669; }
+
+  .deal-footer {
+    display: flex; align-items: center; justify-content: space-between;
+    padding-top: 8px; border-top: 1px solid #F1F5F9;
+  }
+  .deal-date { font-size: 10px; color: #94A3B8; }
+  .deal-assignee {
+    width: 26px; height: 26px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 10px; font-weight: 700; color: #fff;
+  }
+  .deal-sla-icon {
+    position: absolute; top: 10px; right: 10px;
+    color: #EF4444;
+  }
+  .deal-sla-icon svg { width: 16px; height: 16px; }
+
+  /* ── List View ── */
+  .list-view { display: none; flex: 1; overflow: auto; padding: 0; }
+  .list-view.active { display: block; }
+  .kanban-wrapper.hidden { display: none; }
+
+  .list-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  .list-table thead { position: sticky; top: 0; background: #F8FAFC; z-index: 2; }
+  .list-table th {
+    text-align: left; padding: 10px 16px; font-weight: 600;
+    color: var(--gray); font-size: 12px; border-bottom: 1px solid #E2E8F0;
+    white-space: nowrap;
+  }
+  .list-table td {
+    padding: 12px 16px; border-bottom: 1px solid #F1F5F9;
+    white-space: nowrap;
+  }
+  .list-table tbody tr { cursor: pointer; transition: background 0.1s; }
+  .list-table tbody tr:hover { background: #F8FAFC; }
+  .list-stage-badge {
+    display: inline-block; padding: 3px 10px; border-radius: 12px;
+    font-size: 11px; font-weight: 600;
+  }
+
+  /* ── Slide Panel ── */
+  .slide-overlay {
+    display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.3);
+    z-index: 100;
+  }
+  .slide-overlay.open { display: block; }
+  .slide-panel {
+    position: fixed; right: -520px; top: 0; bottom: 0;
+    width: 520px; background: #fff; z-index: 101;
+    box-shadow: -4px 0 24px rgba(0,0,0,0.12);
+    transition: right 0.3s ease; overflow-y: auto;
+  }
+  .slide-panel.open { right: 0; }
+  .panel-header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 20px 24px; border-bottom: 1px solid #E2E8F0;
+    position: sticky; top: 0; background: #fff; z-index: 2;
+  }
+  .panel-header h3 { font-size: 16px; font-weight: 700; }
+  .panel-close {
+    width: 32px; height: 32px; border: none; background: #F1F5F9;
+    border-radius: 8px; cursor: pointer; display: flex;
+    align-items: center; justify-content: center; color: var(--gray);
+  }
+  .panel-close:hover { background: #E2E8F0; }
+  .panel-body { padding: 24px; }
+  .panel-section { margin-bottom: 24px; }
+  .panel-section-title { font-size: 12px; font-weight: 600; color: var(--gray); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 12px; }
+  .panel-field { display: flex; margin-bottom: 10px; }
+  .panel-label { width: 100px; font-size: 13px; color: var(--gray); flex-shrink: 0; padding-top: 2px; }
+  .panel-value { font-size: 13px; color: var(--slate); font-weight: 500; }
+  .panel-stage-flow {
+    display: flex; align-items: center; gap: 4px; margin-top: 16px; flex-wrap: wrap;
+  }
+  .panel-stage-dot {
+    padding: 4px 10px; border-radius: 12px; font-size: 11px; font-weight: 600;
+    background: #F1F5F9; color: var(--gray);
+  }
+  .panel-stage-dot.current { background: var(--teal); color: #fff; }
+  .panel-stage-dot.done { background: #DCFCE7; color: #15803D; }
+  .panel-stage-arrow { color: #CBD5E1; font-size: 14px; }
+
+  .panel-amount-big { font-size: 28px; font-weight: 800; color: var(--slate); margin-bottom: 8px; }
+  .panel-timeline { border-left: 2px solid #E2E8F0; padding-left: 16px; }
+  .timeline-item { position: relative; padding-bottom: 16px; }
+  .timeline-item::before {
+    content: ''; position: absolute; left: -21px; top: 4px;
+    width: 10px; height: 10px; border-radius: 50%;
+    background: var(--teal); border: 2px solid #fff;
+  }
+  .timeline-date { font-size: 11px; color: #94A3B8; margin-bottom: 2px; }
+  .timeline-text { font-size: 13px; color: var(--slate); }
+</style>
+</head>
+<body>
+
+<!-- Sidebar -->
+<aside class="sidebar">
+  <div class="sidebar-logo">
+    <div class="logo-icon"><svg fill="none" viewBox="0 0 24 24" stroke="#fff" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg></div>
+    <span>캐스팅엔 CRM</span>
+  </div>
+  <nav class="sidebar-nav">
+    <div class="nav-section">
+      <div class="nav-item"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M4 5a1 1 0 011-1h4a1 1 0 011 1v5a1 1 0 01-1 1H5a1 1 0 01-1-1V5zm10 0a1 1 0 011-1h4a1 1 0 011 1v2a1 1 0 01-1 1h-4a1 1 0 01-1-1V5z"/></svg><span class="label">대시보드</span></div>
+    </div>
+    <div class="nav-section">
+      <div class="nav-item"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M11 5.882V19.24a1.76 1.76 0 01-3.417.592l-2.147-6.15M18 13a3 3 0 100-6M5.436 13.683A4.001 4.001 0 017 6h1.832c4.1 0 7.625-1.234 9.168-3v14c-1.543-1.766-5.067-3-9.168-3H7a3.988 3.988 0 01-1.564-.317z"/></svg><span class="label">마케팅</span></div>
+    </div>
+    <div class="nav-section">
+      <div class="nav-item active"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg><span class="label">세일즈</span><svg class="chevron open" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg></div>
+      <div class="sub-menu open">
+        <a class="sub-item active">딜</a><a class="sub-item">상품</a><a class="sub-item">견적서</a><a class="sub-item">견적서 템플릿</a>
+      </div>
+    </div>
+    <div class="nav-section"><div class="nav-item"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/></svg><span class="label">컨택</span></div></div>
+    <div class="nav-section"><div class="nav-item"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg><span class="label">이메일</span></div></div>
+    <div class="nav-section"><div class="nav-item"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg><span class="label">일정 관리</span></div></div>
+  </nav>
+</aside>
+
+<!-- Main -->
+<div class="main">
+  <!-- Page Header -->
+  <div class="page-header">
+    <div class="page-header-top">
+      <h1 class="page-title">딜</h1>
+      <div class="page-header-actions">
+        <div class="view-toggle">
+          <span class="view-count">8/20</span>
+          <button class="view-btn active" id="kanbanViewBtn" title="칸반 보기">
+            <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 17V7m0 10a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h2a2 2 0 012 2m0 10a2 2 0 002 2h2a2 2 0 002-2M9 7a2 2 0 012-2h2a2 2 0 012 2m0 10V7"/></svg>
+          </button>
+          <button class="view-btn" id="listViewBtn" title="리스트 보기">
+            <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 10h16M4 14h16M4 18h16"/></svg>
+          </button>
+        </div>
+        <button class="btn btn-primary">
+          <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/></svg>
+          딜 생성
+        </button>
+      </div>
+    </div>
+    <div class="page-tabs">
+      <div class="page-tab active">모든 딜</div>
+      <div class="page-tab">전체</div>
+      <div class="page-tab">진행중인 딜</div>
+      <div class="page-tab">유제욱 팀장</div>
+      <div class="page-tab">박경재 파트장</div>
+    </div>
+  </div>
+
+  <!-- Filter Bar -->
+  <div class="filter-bar">
+    <div class="filter-chip">
+      <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/></svg>
+      파이프라인 <span class="val">기본</span>
+    </div>
+    <div class="filter-chip">
+      <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
+      담당자 <span class="val">전체</span>
+    </div>
+    <div class="filter-divider"></div>
+    <div class="filter-chip">
+      <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3 4h13M3 8h9m-9 4h6m4 0l4-4m0 0l4 4m-4-4v12"/></svg>
+      정렬
+    </div>
+    <div class="filter-chip">
+      <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"/></svg>
+      필터
+    </div>
+    <div class="filter-chip">
+      <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.066 2.573c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.573 1.066c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.066-2.573c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.573-1.066z"/><circle cx="12" cy="12" r="3"/></svg>
+      카드 설정
+    </div>
+  </div>
+
+  <!-- Kanban Board -->
+  <div class="kanban-wrapper" id="kanbanWrapper">
+    <div class="kanban-board" id="kanbanBoard"></div>
+  </div>
+
+  <!-- List View -->
+  <div class="list-view" id="listView">
+    <table class="list-table">
+      <thead>
+        <tr>
+          <th><input type="checkbox"></th>
+          <th>딜명</th>
+          <th>스테이지</th>
+          <th>금액</th>
+          <th>계약가능성</th>
+          <th>담당자</th>
+          <th>회사</th>
+          <th>예상계약월</th>
+          <th>생성날짜</th>
+        </tr>
+      </thead>
+      <tbody id="listBody"></tbody>
+    </table>
+  </div>
+
+  <!-- Slide Panel -->
+  <div class="slide-overlay" id="slideOverlay"></div>
+  <div class="slide-panel" id="slidePanel">
+    <div class="panel-header">
+      <h3 id="panelTitle">딜 상세</h3>
+      <button class="panel-close" id="panelClose">
+        <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+      </button>
+    </div>
+    <div class="panel-body" id="panelBody"></div>
+  </div>
+</div>
+
+<script>
+const stages = [
+  { name: '리드&보류', count: 238, amount: '21.9억', color: '#94A3B8', sla: 'SLA 12건 초과' },
+  { name: 'MQL', count: 42, amount: '8.4억', color: '#6366F1', sla: 'SLA 5건 초과' },
+  { name: 'SAL', count: 12, amount: '4.2억', color: '#8B5CF6', sla: null },
+  { name: 'SQL/미팅예정', count: 7, amount: '18억', color: '#0891B2', sla: 'SLA 2건 초과' },
+  { name: 'Discovery/미팅완료', count: 22, amount: '251억', color: '#059669', sla: null },
+  { name: 'Proposal', count: 3, amount: '12억', color: '#D97706', sla: null },
+  { name: '협상', count: 2, amount: '8.5억', color: '#DC2626', sla: null }
+];
+
+const avatarColors = ['#6366F1','#0891B2','#D97706','#DC2626','#059669','#8B5CF6','#EC4899'];
+const assignees = ['유제욱','박경재','김서영','이하은','정민수','오지훈','한소희'];
+const companies = ['네이버','카카오','쿠팡','토스','배달의민족','당근마켓','라인','삼성SDS','LG CNS','현대오토에버','SK텔레콤','KT','마이리얼트립','야놀자','무신사'];
+const probabilities = ['D+','C+','B+','A+'];
+const probClasses = ['low','low','mid','high'];
+const sizes = ['대기업','중견기업','중소기업','스타트업'];
+const months = ['2026.04','2026.05','2026.06','2026.07','2026.08','2026.03'];
+const amounts = [1200,2400,3600,5800,8500,12000,18000,25000,42000,68000,95000,150000,230000,350000,500000];
+
+function randomPick(arr) { return arr[Math.floor(Math.random()*arr.length)]; }
+function formatAmount(v) {
+  if (v >= 10000) return (v/10000).toFixed(1).replace(/\.0$/,'') + '억';
+  return v.toLocaleString() + '만';
+}
+function randomDate() {
+  const d = new Date(2025, Math.floor(Math.random()*12), Math.floor(Math.random()*28)+1);
+  return d.toISOString().slice(0,10);
+}
+
+// Generate deals
+const deals = [];
+for (let i = 0; i < 40; i++) {
+  const stageIdx = Math.random() < 0.35 ? 0 : Math.random() < 0.2 ? 1 : Math.floor(Math.random()*stages.length);
+  const aIdx = Math.floor(Math.random()*assignees.length);
+  const probIdx = Math.floor(Math.random()*probabilities.length);
+  const amt = randomPick(amounts);
+  const mrr = Math.floor(amt * (0.05 + Math.random()*0.15));
+  deals.push({
+    id: i,
+    name: randomPick(['SaaS 도입','클라우드 전환','ERP 구축','CRM 연동','마케팅 자동화','데이터 분석','AI 챗봇','보안 솔루션','HR 시스템','전자결재']) + ' - ' + randomPick(companies),
+    stage: stageIdx,
+    assignee: assignees[aIdx],
+    assigneeColor: avatarColors[aIdx],
+    company: randomPick(companies),
+    amount: amt,
+    probability: probabilities[probIdx],
+    probClass: probClasses[probIdx],
+    size: randomPick(sizes),
+    month: randomPick(months),
+    mrr: mrr,
+    date: randomDate(),
+    slaWarning: Math.random() < 0.15
+  });
+}
+
+// Render Kanban
+function renderKanban() {
+  const board = document.getElementById('kanbanBoard');
+  board.innerHTML = '';
+  stages.forEach((stage, si) => {
+    const stageDeals = deals.filter(d => d.stage === si);
+    const col = document.createElement('div');
+    col.className = 'kanban-col';
+    col.innerHTML = `
+      <div class="col-header">
+        <div class="col-header-top">
+          <div class="col-title">
+            <span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${stage.color}"></span>
+            ${stage.name}
+            <span class="col-count">${stage.count}</span>
+          </div>
+        </div>
+        <div class="col-amount">${stage.amount}</div>
+        ${stage.sla ? `<div class="col-sla"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>${stage.sla}</div>` : ''}
+      </div>
+      <div class="col-body">${stageDeals.map(d => `
+        <div class="deal-card ${d.slaWarning ? 'sla-warning' : ''}" onclick="openPanel(${d.id})">
+          ${d.slaWarning ? '<div class="deal-sla-icon"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg></div>' : ''}
+          <div class="deal-name">${d.name}</div>
+          <div class="deal-company"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5"/></svg>${d.assignee} · ${d.company}</div>
+          <div class="deal-amount">${formatAmount(d.amount)}</div>
+          <div class="deal-meta">
+            <span class="deal-tag tag-probability ${d.probClass}">${d.probability}</span>
+            <span class="deal-tag tag-size">${d.size}</span>
+            <span class="deal-tag tag-month">${d.month}</span>
+            <span class="deal-tag tag-mrr">MRR ${formatAmount(d.mrr)}</span>
+          </div>
+          <div class="deal-footer">
+            <span class="deal-date">${d.date}</span>
+            <div class="deal-assignee" style="background:${d.assigneeColor}">${d.assignee[0]}</div>
+          </div>
+        </div>
+      `).join('')}</div>
+      <button class="col-add-btn"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/></svg>추가</button>
+    `;
+    board.appendChild(col);
+  });
+}
+
+// Render List
+function renderList() {
+  const tbody = document.getElementById('listBody');
+  const stageColors = { 0:'#94A3B8',1:'#6366F1',2:'#8B5CF6',3:'#0891B2',4:'#059669',5:'#D97706',6:'#DC2626' };
+  tbody.innerHTML = deals.map(d => `
+    <tr onclick="openPanel(${d.id})">
+      <td><input type="checkbox" onclick="event.stopPropagation()"></td>
+      <td style="font-weight:600;color:var(--slate)">${d.name}</td>
+      <td><span class="list-stage-badge" style="background:${stageColors[d.stage]}20;color:${stageColors[d.stage]}">${stages[d.stage].name}</span></td>
+      <td style="font-weight:700">${formatAmount(d.amount)}</td>
+      <td><span class="deal-tag tag-probability ${d.probClass}">${d.probability}</span></td>
+      <td>${d.assignee}</td>
+      <td>${d.company}</td>
+      <td>${d.month}</td>
+      <td style="color:var(--gray)">${d.date}</td>
+    </tr>
+  `).join('');
+}
+
+// Panel
+function openPanel(id) {
+  const d = deals.find(x => x.id === id);
+  if (!d) return;
+  document.getElementById('panelTitle').textContent = d.name;
+  const stageNames = stages.map(s => s.name);
+  document.getElementById('panelBody').innerHTML = `
+    <div class="panel-amount-big">${formatAmount(d.amount)}</div>
+    <div class="panel-stage-flow">
+      ${stageNames.map((s,i) => `
+        <span class="panel-stage-dot ${i < d.stage ? 'done' : i === d.stage ? 'current' : ''}">${s}</span>
+        ${i < stageNames.length-1 ? '<span class="panel-stage-arrow">→</span>' : ''}
+      `).join('')}
+    </div>
+    <div class="panel-section" style="margin-top:24px">
+      <div class="panel-section-title">기본 정보</div>
+      <div class="panel-field"><div class="panel-label">담당자</div><div class="panel-value">${d.assignee}</div></div>
+      <div class="panel-field"><div class="panel-label">회사</div><div class="panel-value">${d.company}</div></div>
+      <div class="panel-field"><div class="panel-label">계약가능성</div><div class="panel-value"><span class="deal-tag tag-probability ${d.probClass}">${d.probability}</span></div></div>
+      <div class="panel-field"><div class="panel-label">금액대</div><div class="panel-value">${d.size}</div></div>
+      <div class="panel-field"><div class="panel-label">예상계약월</div><div class="panel-value">${d.month}</div></div>
+      <div class="panel-field"><div class="panel-label">MRR</div><div class="panel-value">${formatAmount(d.mrr)}</div></div>
+      <div class="panel-field"><div class="panel-label">생성날짜</div><div class="panel-value">${d.date}</div></div>
+    </div>
+    <div class="panel-section">
+      <div class="panel-section-title">활동 타임라인</div>
+      <div class="panel-timeline">
+        <div class="timeline-item"><div class="timeline-date">2026-03-25 14:30</div><div class="timeline-text">미팅 완료 - 제안서 전달 예정</div></div>
+        <div class="timeline-item"><div class="timeline-date">2026-03-22 10:00</div><div class="timeline-text">${d.assignee}님이 딜 스테이지를 '${stages[d.stage].name}'으로 변경</div></div>
+        <div class="timeline-item"><div class="timeline-date">2026-03-18 09:15</div><div class="timeline-text">이메일 발송 - 제품 소개 자료</div></div>
+        <div class="timeline-item"><div class="timeline-date">${d.date} 11:00</div><div class="timeline-text">딜 생성됨</div></div>
+      </div>
+    </div>
+  `;
+  document.getElementById('slideOverlay').classList.add('open');
+  document.getElementById('slidePanel').classList.add('open');
+}
+
+function closePanel() {
+  document.getElementById('slideOverlay').classList.remove('open');
+  document.getElementById('slidePanel').classList.remove('open');
+}
+document.getElementById('slideOverlay').addEventListener('click', closePanel);
+document.getElementById('panelClose').addEventListener('click', closePanel);
+
+// View toggle
+document.getElementById('kanbanViewBtn').addEventListener('click', () => {
+  document.getElementById('kanbanViewBtn').classList.add('active');
+  document.getElementById('listViewBtn').classList.remove('active');
+  document.getElementById('kanbanWrapper').classList.remove('hidden');
+  document.getElementById('listView').classList.remove('active');
+});
+document.getElementById('listViewBtn').addEventListener('click', () => {
+  document.getElementById('listViewBtn').classList.add('active');
+  document.getElementById('kanbanViewBtn').classList.remove('active');
+  document.getElementById('kanbanWrapper').classList.add('hidden');
+  document.getElementById('listView').classList.add('active');
+});
+
+// Tab switching
+document.querySelectorAll('.page-tab').forEach(tab => {
+  tab.addEventListener('click', () => {
+    document.querySelectorAll('.page-tab').forEach(t => t.classList.remove('active'));
+    tab.classList.add('active');
+  });
+});
+
+// Sidebar accordion
+document.querySelectorAll('.nav-item').forEach(item => {
+  item.addEventListener('click', () => {
+    const chevron = item.querySelector('.chevron');
+    const subMenu = item.parentElement.querySelector('.sub-menu');
+    if (chevron && subMenu) { chevron.classList.toggle('open'); subMenu.classList.toggle('open'); }
+  });
+});
+
+renderKanban();
+renderList();
+</script>
+</body>
+</html>
