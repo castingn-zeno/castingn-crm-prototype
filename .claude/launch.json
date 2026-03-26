@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "crm-prototype",
+      "runtimeExecutable": "npx",
+      "runtimeArgs": ["serve", "/Users/kwool/Documents/Claude/Projects/crm-prototype", "-l", "3456"],
+      "port": 3456
+    }
+  ]
+}
