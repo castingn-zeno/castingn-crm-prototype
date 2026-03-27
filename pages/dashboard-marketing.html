@@ -358,5 +358,13 @@
 </div>
 
 <script src="nav.js"></script>
+<script>
+if (window.parent !== window) {
+  document.querySelectorAll('.sidebar').forEach(el => el.style.display = 'none');
+  document.querySelectorAll('.topbar').forEach(el => el.style.display = 'none');
+  const main = document.querySelector('.main') || document.querySelector('.content') || document.querySelector('body > div:not(.sidebar)');
+  if (main) { main.style.marginLeft = '0'; main.style.width = '100%'; }
+}
+</script>
 </body>
 </html>

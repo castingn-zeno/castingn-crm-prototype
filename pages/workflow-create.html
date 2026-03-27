@@ -1,0 +1,445 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>캐스팅엔 CRM - 워크플로우 생성</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #F0F9FF; color: #1E293B; min-height: 100vh; }
+
+/* Header */
+.page-header { background: #fff; border-bottom: 1px solid #E2E8F0; padding: 16px 32px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 100; }
+.page-header h1 { font-size: 18px; font-weight: 700; color: #1A2332; }
+.header-actions { display: flex; gap: 10px; }
+.btn { padding: 8px 20px; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; border: none; transition: all .15s; }
+.btn-cancel { background: #F1F5F9; color: #64748B; }
+.btn-cancel:hover { background: #E2E8F0; }
+.btn-save { background: #0891B2; color: #fff; }
+.btn-save:hover { background: #0e7490; }
+
+/* Presets */
+.preset-bar { background: #fff; border-bottom: 1px solid #E2E8F0; padding: 12px 32px; display: flex; align-items: center; gap: 10px; }
+.preset-label { font-size: 12px; color: #64748B; font-weight: 600; margin-right: 4px; }
+.preset-btn { padding: 6px 14px; border-radius: 20px; font-size: 12px; font-weight: 500; cursor: pointer; border: 1px solid #E2E8F0; background: #fff; color: #1E293B; transition: all .15s; white-space: nowrap; }
+.preset-btn:hover { border-color: #0891B2; color: #0891B2; background: #F0F9FF; }
+.preset-btn.active { border-color: #0891B2; color: #fff; background: #0891B2; }
+
+/* Layout */
+.page-body { display: flex; gap: 28px; padding: 28px 32px; max-width: 1200px; margin: 0 auto; }
+.left-panel { width: 340px; flex-shrink: 0; }
+.right-panel { flex: 1; min-width: 0; }
+
+/* Cards */
+.card { background: #fff; border: 1px solid #E2E8F0; border-radius: 12px; padding: 24px; margin-bottom: 20px; }
+.card-title { font-size: 14px; font-weight: 700; color: #1A2332; margin-bottom: 18px; display: flex; align-items: center; gap: 8px; }
+.card-title svg { width: 18px; height: 18px; color: #0891B2; }
+
+/* Form */
+.form-group { margin-bottom: 16px; }
+.form-group:last-child { margin-bottom: 0; }
+.form-label { display: block; font-size: 12px; font-weight: 600; color: #64748B; margin-bottom: 6px; }
+.form-label .req { color: #EF4444; margin-left: 2px; }
+.form-input, .form-select, .form-textarea { width: 100%; padding: 9px 12px; border: 1px solid #E2E8F0; border-radius: 8px; font-size: 13px; color: #1E293B; background: #fff; outline: none; font-family: inherit; }
+.form-input:focus, .form-select:focus, .form-textarea:focus { border-color: #0891B2; box-shadow: 0 0 0 3px rgba(8,145,178,0.1); }
+.form-textarea { resize: vertical; min-height: 72px; }
+.form-select { cursor: pointer; appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2364748B' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 12px center; padding-right: 32px; }
+
+/* Flow Builder */
+.flow-container { position: relative; }
+
+.trigger-block { background: #1A2332; border-radius: 12px; padding: 20px; color: #fff; }
+.trigger-label { font-size: 11px; font-weight: 700; color: #0891B2; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 12px; display: flex; align-items: center; gap: 6px; }
+.trigger-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.trigger-select { padding: 8px 12px; border-radius: 8px; font-size: 13px; border: 1px solid #334155; background: #0F172A; color: #fff; outline: none; cursor: pointer; appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2394A3B8' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 10px center; padding-right: 30px; }
+.trigger-select:focus { border-color: #0891B2; }
+.trigger-text { font-size: 13px; color: #94A3B8; }
+
+/* Filter */
+.filter-section { margin-top: 16px; }
+.filter-row { display: flex; align-items: center; gap: 8px; margin-top: 10px; background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 8px; padding: 10px 12px; }
+.filter-row select, .filter-row input { padding: 6px 10px; border: 1px solid #E2E8F0; border-radius: 6px; font-size: 12px; background: #fff; outline: none; }
+.filter-row select:focus, .filter-row input:focus { border-color: #0891B2; }
+.btn-filter-remove { width: 24px; height: 24px; border-radius: 6px; border: none; background: #FEE2E2; color: #EF4444; cursor: pointer; font-size: 14px; display: flex; align-items: center; justify-content: center; }
+.btn-add-filter { display: inline-flex; align-items: center; gap: 4px; margin-top: 12px; padding: 6px 14px; border-radius: 8px; border: 1px dashed #CBD5E1; background: #fff; color: #64748B; font-size: 12px; font-weight: 500; cursor: pointer; transition: all .15s; }
+.btn-add-filter:hover { border-color: #0891B2; color: #0891B2; }
+
+/* Flow line */
+.flow-line { display: flex; flex-direction: column; align-items: center; padding: 0; }
+.flow-connector { width: 2px; height: 32px; background: #CBD5E1; }
+.flow-add-btn { width: 32px; height: 32px; border-radius: 50%; border: 2px solid #CBD5E1; background: #fff; color: #64748B; font-size: 18px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all .15s; }
+.flow-add-btn:hover { border-color: #0891B2; color: #0891B2; background: #F0F9FF; }
+
+/* Action cards */
+.action-card { background: #fff; border: 1px solid #E2E8F0; border-radius: 10px; padding: 16px 18px; display: flex; align-items: center; gap: 12px; position: relative; transition: box-shadow .15s; }
+.action-card:hover { box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
+.action-icon { width: 36px; height: 36px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 16px; flex-shrink: 0; }
+.action-icon.teal { background: #E0F2FE; color: #0891B2; }
+.action-icon.amber { background: #FEF3C7; color: #D97706; }
+.action-icon.green { background: #D1FAE5; color: #059669; }
+.action-icon.purple { background: #EDE9FE; color: #7C3AED; }
+.action-icon.red { background: #FEE2E2; color: #DC2626; }
+.action-icon.blue { background: #DBEAFE; color: #2563EB; }
+.action-icon.yellow { background: #FEF9C3; color: #CA8A04; }
+.action-info { flex: 1; }
+.action-type { font-size: 13px; font-weight: 600; color: #1E293B; }
+.action-desc { font-size: 11px; color: #94A3B8; margin-top: 2px; }
+.action-delete { width: 28px; height: 28px; border-radius: 6px; border: none; background: transparent; color: #CBD5E1; cursor: pointer; font-size: 16px; display: flex; align-items: center; justify-content: center; transition: all .1s; }
+.action-delete:hover { background: #FEE2E2; color: #EF4444; }
+
+/* Completion block */
+.completion-block { background: #F1F5F9; border: 2px dashed #CBD5E1; border-radius: 10px; padding: 16px; text-align: center; color: #64748B; font-size: 13px; font-weight: 600; display: flex; align-items: center; justify-content: center; gap: 8px; }
+.completion-block svg { width: 18px; height: 18px; }
+
+/* Slide Panel */
+.panel-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.3); z-index: 200; display: none; opacity: 0; transition: opacity .2s; }
+.panel-overlay.show { display: block; opacity: 1; }
+.slide-panel { position: fixed; top: 0; right: -420px; width: 400px; height: 100vh; background: #fff; box-shadow: -4px 0 20px rgba(0,0,0,0.1); z-index: 201; transition: right .25s ease; overflow-y: auto; }
+.slide-panel.show { right: 0; }
+.panel-header { padding: 20px 24px; border-bottom: 1px solid #E2E8F0; display: flex; align-items: center; justify-content: space-between; }
+.panel-header h3 { font-size: 16px; font-weight: 700; color: #1A2332; }
+.panel-close { width: 32px; height: 32px; border-radius: 8px; border: none; background: #F1F5F9; color: #64748B; cursor: pointer; font-size: 18px; display: flex; align-items: center; justify-content: center; }
+.panel-close:hover { background: #E2E8F0; }
+.panel-body { padding: 20px 24px; }
+.panel-section { margin-bottom: 20px; }
+.panel-section-title { font-size: 11px; font-weight: 700; color: #94A3B8; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 12px; }
+.action-option { display: flex; align-items: center; gap: 12px; padding: 12px 14px; border: 1px solid #E2E8F0; border-radius: 10px; cursor: pointer; transition: all .15s; margin-bottom: 8px; }
+.action-option:hover { border-color: #0891B2; background: #F0F9FF; }
+.action-option .action-icon { width: 32px; height: 32px; font-size: 14px; }
+.action-option-name { font-size: 13px; font-weight: 600; color: #1E293B; }
+</style>
+</head>
+<body>
+
+<div class="page-header">
+  <h1>워크플로우 생성</h1>
+  <div class="header-actions">
+    <button class="btn btn-cancel" onclick="history.back()">취소</button>
+    <button class="btn btn-save" onclick="alert('워크플로우가 저장되었습니다.')">저장</button>
+  </div>
+</div>
+
+<div class="preset-bar">
+  <span class="preset-label">빠른 템플릿:</span>
+  <button class="preset-btn" onclick="loadPreset(1)">웹폼 제출 → 담당자 배정 + 웰컴 시퀀스</button>
+  <button class="preset-btn" onclick="loadPreset(2)">딜 실패 → 리드 재이관 + 너처링</button>
+  <button class="preset-btn" onclick="loadPreset(3)">MQL 전환 → 세일즈 알림</button>
+</div>
+
+<div class="page-body">
+  <!-- Left: Basic Info -->
+  <div class="left-panel">
+    <div class="card">
+      <div class="card-title">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+        기본 정보
+      </div>
+      <div class="form-group">
+        <label class="form-label">이름 <span class="req">*</span></label>
+        <input type="text" class="form-input" id="wfName" placeholder="워크플로우 이름을 입력하세요">
+      </div>
+      <div class="form-group">
+        <label class="form-label">설명</label>
+        <textarea class="form-textarea" id="wfDesc" placeholder="워크플로우에 대한 설명을 입력하세요"></textarea>
+      </div>
+      <div class="form-group">
+        <label class="form-label">폴더</label>
+        <select class="form-select" id="wfFolder">
+          <option value="업무마켓">업무마켓</option>
+          <option value="마케팅">마케팅</option>
+          <option value="세일즈">세일즈</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">상태 <span class="req">*</span></label>
+        <select class="form-select" id="wfStatus">
+          <option value="active">활성</option>
+          <option value="inactive">비활성</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">실행 시간 <span class="req">*</span></label>
+        <select class="form-select" id="wfTime">
+          <option value="always">항상</option>
+          <option value="business">업무 시간만</option>
+        </select>
+      </div>
+    </div>
+  </div>
+
+  <!-- Right: Flow Builder -->
+  <div class="right-panel">
+    <div class="card">
+      <div class="card-title">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+        워크플로우
+      </div>
+
+      <div class="flow-container" id="flowContainer">
+        <!-- Trigger -->
+        <div class="trigger-block">
+          <div class="trigger-label">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+            트리거
+          </div>
+          <div class="trigger-row">
+            <select class="trigger-select" id="triggerObject" onchange="updateActions()">
+              <option value="딜">딜</option>
+              <option value="리드">리드</option>
+              <option value="고객">고객</option>
+              <option value="회사">회사</option>
+            </select>
+            <span class="trigger-text">이(가)</span>
+            <select class="trigger-select" id="triggerAction">
+              <option value="생성">생성</option>
+              <option value="필드 업데이트">필드 업데이트</option>
+              <option value="날짜 업데이트">날짜 업데이트</option>
+              <option value="스테이지 변경">스테이지 변경</option>
+            </select>
+            <span class="trigger-text">했을 때</span>
+          </div>
+
+          <!-- Filter -->
+          <div class="filter-section">
+            <div id="filterList"></div>
+            <button class="btn-add-filter" onclick="addFilter()">+ 필터 추가</button>
+          </div>
+        </div>
+
+        <!-- Flow actions inserted here -->
+        <div id="actionFlow"></div>
+
+        <!-- Add action button -->
+        <div class="flow-line">
+          <div class="flow-connector"></div>
+          <button class="flow-add-btn" onclick="openPanel()" title="액션 추가">+</button>
+          <div class="flow-connector"></div>
+        </div>
+
+        <!-- Completion -->
+        <div class="completion-block">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+          워크플로우 완료
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Slide Panel -->
+<div class="panel-overlay" id="panelOverlay" onclick="closePanel()"></div>
+<div class="slide-panel" id="slidePanel">
+  <div class="panel-header">
+    <h3>액션 추가</h3>
+    <button class="panel-close" onclick="closePanel()">&times;</button>
+  </div>
+  <div class="panel-body">
+    <div class="panel-section">
+      <div class="panel-section-title">자동화</div>
+      <div class="action-option" onclick="addAction('시퀀스 등록','등록할 시퀀스를 선택해주세요','teal','&#9993;')">
+        <div class="action-icon teal">&#9993;</div>
+        <div class="action-option-name">시퀀스 등록</div>
+      </div>
+      <div class="action-option" onclick="addAction('시퀀스 완료','시퀀스를 완료 처리합니다','teal','&#10003;')">
+        <div class="action-icon teal">&#10003;</div>
+        <div class="action-option-name">시퀀스 완료</div>
+      </div>
+      <div class="action-option" onclick="addAction('담당자 지정','담당자를 선택해주세요','purple','&#9787;')">
+        <div class="action-icon purple">&#9787;</div>
+        <div class="action-option-name">담당자 지정</div>
+      </div>
+      <div class="action-option" onclick="addAction('필드 수정','수정할 필드를 선택해주세요','blue','&#9998;')">
+        <div class="action-icon blue">&#9998;</div>
+        <div class="action-option-name">필드 수정</div>
+      </div>
+    </div>
+    <div class="panel-section">
+      <div class="panel-section-title">생성</div>
+      <div class="action-option" onclick="addAction('노트 생성','노트 내용을 입력해주세요','green','&#9998;')">
+        <div class="action-icon green">&#9998;</div>
+        <div class="action-option-name">노트 생성</div>
+      </div>
+      <div class="action-option" onclick="addAction('TODO 생성','TODO 내용을 입력해주세요','green','&#9745;')">
+        <div class="action-icon green">&#9745;</div>
+        <div class="action-option-name">TODO 생성</div>
+      </div>
+      <div class="action-option" onclick="addAction('딜 생성','딜 정보를 입력해주세요','amber','&#9733;')">
+        <div class="action-icon amber">&#9733;</div>
+        <div class="action-option-name">딜 생성</div>
+      </div>
+      <div class="action-option" onclick="addAction('리드 생성','리드 정보를 입력해주세요','amber','&#9734;')">
+        <div class="action-icon amber">&#9734;</div>
+        <div class="action-option-name">리드 생성</div>
+      </div>
+    </div>
+    <div class="panel-section">
+      <div class="panel-section-title">메시징</div>
+      <div class="action-option" onclick="addAction('이메일 발송','이메일 템플릿을 선택해주세요','teal','&#9993;')">
+        <div class="action-icon teal">&#9993;</div>
+        <div class="action-option-name">이메일 발송</div>
+      </div>
+      <div class="action-option" onclick="addAction('알림 이메일 발송','알림 수신자를 설정해주세요','red','&#9888;')">
+        <div class="action-icon red">&#9888;</div>
+        <div class="action-option-name">알림 이메일 발송</div>
+      </div>
+      <div class="action-option" onclick="addAction('문자 메시지 발송','문자 내용을 입력해주세요','amber','&#9742;')">
+        <div class="action-icon amber">&#9742;</div>
+        <div class="action-option-name">문자 메시지 발송</div>
+      </div>
+      <div class="action-option" onclick="addAction('Slack 메시지 발송','Slack 채널을 선택해주세요','purple','&#9993;')">
+        <div class="action-icon purple">&#9993;</div>
+        <div class="action-option-name">Slack 메시지 발송</div>
+      </div>
+      <div class="action-option" onclick="addAction('알림톡 발송','알림톡 템플릿을 선택해주세요','yellow','&#9993;')">
+        <div class="action-icon yellow">&#9993;</div>
+        <div class="action-option-name">알림톡 발송</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// Trigger action options per object
+const actionOptions = {
+  '딜': ['생성', '필드 업데이트', '날짜 업데이트', '스테이지 변경'],
+  '리드': ['생성', '필드 업데이트', '날짜 업데이트', '웹폼 제출', '시퀀스 등록', '시퀀스 완료'],
+  '고객': ['생성', '필드 업데이트', '날짜 업데이트', '웹폼 제출'],
+  '회사': ['생성', '필드 업데이트']
+};
+
+function updateActions() {
+  const obj = document.getElementById('triggerObject').value;
+  const sel = document.getElementById('triggerAction');
+  const opts = actionOptions[obj] || [];
+  sel.innerHTML = opts.map(o => `<option value="${o}">${o}</option>`).join('');
+}
+
+// Filter
+let filterCount = 0;
+function addFilter() {
+  filterCount++;
+  const row = document.createElement('div');
+  row.className = 'filter-row';
+  row.id = 'filter-' + filterCount;
+  row.innerHTML = `
+    <select style="flex:1;"><option>상태</option><option>담당자</option><option>지역</option><option>소스</option><option>금액</option></select>
+    <select><option>같음</option><option>포함</option><option>크거나 같음</option><option>작거나 같음</option></select>
+    <input type="text" placeholder="값 입력" style="flex:1;">
+    <button class="btn-filter-remove" onclick="this.parentElement.remove()">&times;</button>
+  `;
+  document.getElementById('filterList').appendChild(row);
+}
+
+// Action flow
+let actions = [];
+const iconMap = {
+  '시퀀스 등록': { color: 'teal', icon: '&#9993;' },
+  '시퀀스 완료': { color: 'teal', icon: '&#10003;' },
+  '담당자 지정': { color: 'purple', icon: '&#9787;' },
+  '필드 수정': { color: 'blue', icon: '&#9998;' },
+  '노트 생성': { color: 'green', icon: '&#9998;' },
+  'TODO 생성': { color: 'green', icon: '&#9745;' },
+  '딜 생성': { color: 'amber', icon: '&#9733;' },
+  '리드 생성': { color: 'amber', icon: '&#9734;' },
+  '이메일 발송': { color: 'teal', icon: '&#9993;' },
+  '알림 이메일 발송': { color: 'red', icon: '&#9888;' },
+  '문자 메시지 발송': { color: 'amber', icon: '&#9742;' },
+  'Slack 메시지 발송': { color: 'purple', icon: '&#9993;' },
+  '알림톡 발송': { color: 'yellow', icon: '&#9993;' },
+};
+
+function addAction(type, desc, color, icon) {
+  actions.push({ type, desc, color, icon });
+  renderFlow();
+  closePanel();
+}
+
+function removeAction(idx) {
+  actions.splice(idx, 1);
+  renderFlow();
+}
+
+function renderFlow() {
+  const container = document.getElementById('actionFlow');
+  container.innerHTML = '';
+  actions.forEach((a, i) => {
+    const info = iconMap[a.type] || { color: a.color, icon: a.icon };
+    container.innerHTML += `
+      <div class="flow-line"><div class="flow-connector"></div></div>
+      <div class="action-card">
+        <div class="action-icon ${info.color}">${info.icon}</div>
+        <div class="action-info">
+          <div class="action-type">${a.type}</div>
+          <div class="action-desc">${a.desc}</div>
+        </div>
+        <button class="action-delete" onclick="removeAction(${i})" title="삭제">&times;</button>
+      </div>
+    `;
+  });
+}
+
+// Panel
+function openPanel() {
+  document.getElementById('panelOverlay').classList.add('show');
+  document.getElementById('slidePanel').classList.add('show');
+}
+function closePanel() {
+  document.getElementById('panelOverlay').classList.remove('show');
+  document.getElementById('slidePanel').classList.remove('show');
+}
+
+// Presets
+function loadPreset(n) {
+  // Clear current
+  actions = [];
+  document.getElementById('filterList').innerHTML = '';
+  document.querySelectorAll('.preset-btn').forEach(b => b.classList.remove('active'));
+  event.target.classList.add('active');
+
+  if (n === 1) {
+    // 웹폼 제출 → 담당자 배정 + 웰컴 시퀀스
+    document.getElementById('wfName').value = '웹폼 제출 → 담당자 배정 + 웰컴 시퀀스';
+    document.getElementById('wfDesc').value = '웹폼 제출 시 자동으로 담당자를 배정하고 웰컴 시퀀스를 등록합니다.';
+    document.getElementById('triggerObject').value = '리드';
+    updateActions();
+    document.getElementById('triggerAction').value = '웹폼 제출';
+    actions = [
+      { type: '담당자 지정', desc: '지역별 영업 담당자 자동 배정' },
+      { type: '시퀀스 등록', desc: '웰컴 시퀀스에 리드 등록' }
+    ];
+  } else if (n === 2) {
+    // 딜 실패 → 리드 재이관 + 너처링
+    document.getElementById('wfName').value = '딜 실패 → 리드 재이관 + 너처링';
+    document.getElementById('wfDesc').value = '딜이 실패 스테이지로 변경되면 리드를 재생성하고 너처링 시퀀스에 등록합니다.';
+    document.getElementById('triggerObject').value = '딜';
+    updateActions();
+    document.getElementById('triggerAction').value = '스테이지 변경';
+    actions = [
+      { type: '리드 생성', desc: '실패한 딜의 정보로 리드 재생성' },
+      { type: '시퀀스 등록', desc: '너처링 시퀀스에 리드 등록' }
+    ];
+  } else if (n === 3) {
+    // MQL 전환 → 세일즈 알림
+    document.getElementById('wfName').value = 'MQL 전환 → 세일즈 알림';
+    document.getElementById('wfDesc').value = 'MQL로 전환된 리드에 대해 세일즈팀에 알림을 보내고 팔로업 TODO를 생성합니다.';
+    document.getElementById('triggerObject').value = '리드';
+    updateActions();
+    document.getElementById('triggerAction').value = '필드 업데이트';
+    actions = [
+      { type: '알림 이메일 발송', desc: '세일즈팀에 MQL 전환 알림 발송' },
+      { type: 'TODO 생성', desc: 'MQL 리드 팔로업 콜 TODO 생성' }
+    ];
+  }
+  renderFlow();
+}
+</script>
+<script>
+if (window.parent !== window) {
+  document.querySelectorAll('.sidebar').forEach(el => el.style.display = 'none');
+  document.querySelectorAll('.topbar').forEach(el => el.style.display = 'none');
+  const main = document.querySelector('.main') || document.querySelector('.content') || document.querySelector('body > div:not(.sidebar)');
+  if (main) { main.style.marginLeft = '0'; main.style.width = '100%'; }
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,445 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>캐스팅엔 CRM - 시퀀스 생성</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #F0F9FF; color: #1E293B; min-height: 100vh; }
+
+/* Header */
+.page-header { background: #fff; border-bottom: 1px solid #E2E8F0; padding: 0 32px; display: flex; align-items: stretch; justify-content: space-between; position: sticky; top: 0; z-index: 100; }
+.header-left { display: flex; align-items: stretch; gap: 0; }
+.tab { padding: 16px 24px; font-size: 14px; font-weight: 600; color: #64748B; cursor: pointer; border-bottom: 3px solid transparent; transition: all .15s; display: flex; align-items: center; gap: 8px; }
+.tab:hover { color: #1A2332; }
+.tab.active { color: #0891B2; border-bottom-color: #0891B2; }
+.tab svg { width: 16px; height: 16px; }
+.header-right { display: flex; align-items: center; gap: 10px; }
+.btn { padding: 8px 20px; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; border: none; transition: all .15s; }
+.btn-save { background: #0891B2; color: #fff; }
+.btn-save:hover { background: #0e7490; }
+
+/* Tab content */
+.tab-content { display: none; }
+.tab-content.active { display: block; }
+
+/* Summary bar */
+.summary-bar { background: #fff; border-bottom: 1px solid #E2E8F0; padding: 14px 32px; display: flex; align-items: center; gap: 32px; }
+.summary-item { display: flex; align-items: center; gap: 8px; }
+.summary-icon { width: 32px; height: 32px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 14px; }
+.summary-icon.teal { background: #E0F2FE; color: #0891B2; }
+.summary-icon.amber { background: #FEF3C7; color: #D97706; }
+.summary-icon.green { background: #D1FAE5; color: #059669; }
+.summary-value { font-size: 18px; font-weight: 700; color: #1A2332; }
+.summary-label { font-size: 11px; color: #94A3B8; }
+.summary-divider { width: 1px; height: 32px; background: #E2E8F0; }
+.example-link { margin-left: auto; font-size: 13px; color: #0891B2; font-weight: 600; cursor: pointer; text-decoration: none; display: flex; align-items: center; gap: 4px; }
+.example-link:hover { text-decoration: underline; }
+
+/* Flow */
+.flow-area { max-width: 640px; margin: 28px auto; padding: 0 24px; }
+
+/* Step cards */
+.step-card { background: #fff; border: 1px solid #E2E8F0; border-radius: 12px; padding: 18px 20px; display: flex; align-items: flex-start; gap: 14px; position: relative; transition: box-shadow .15s; }
+.step-card:hover { box-shadow: 0 2px 10px rgba(0,0,0,0.06); }
+.step-number { width: 28px; height: 28px; border-radius: 50%; background: #0891B2; color: #fff; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; flex-shrink: 0; margin-top: 2px; }
+.step-icon { width: 40px; height: 40px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 18px; flex-shrink: 0; }
+.step-icon.teal { background: #E0F2FE; color: #0891B2; }
+.step-icon.amber { background: #FEF3C7; color: #D97706; }
+.step-icon.yellow { background: #FEF9C3; color: #CA8A04; }
+.step-icon.green { background: #D1FAE5; color: #059669; }
+.step-body { flex: 1; min-width: 0; }
+.step-type { font-size: 14px; font-weight: 700; color: #1A2332; margin-bottom: 4px; }
+.step-config { font-size: 12px; color: #64748B; margin-bottom: 8px; }
+.step-delay { display: inline-flex; align-items: center; gap: 6px; }
+.step-delay select { padding: 4px 8px; border: 1px solid #E2E8F0; border-radius: 6px; font-size: 12px; color: #1E293B; background: #F8FAFC; outline: none; cursor: pointer; }
+.step-delay select:focus { border-color: #0891B2; }
+.step-delay-label { font-size: 11px; color: #94A3B8; }
+.step-delete { position: absolute; top: 12px; right: 12px; width: 28px; height: 28px; border-radius: 6px; border: none; background: transparent; color: #CBD5E1; cursor: pointer; font-size: 16px; display: flex; align-items: center; justify-content: center; transition: all .1s; }
+.step-delete:hover { background: #FEE2E2; color: #EF4444; }
+
+/* Flow connectors */
+.flow-line { display: flex; flex-direction: column; align-items: center; padding: 0; }
+.flow-connector { width: 2px; height: 24px; background: #CBD5E1; }
+.flow-add-btn { width: 32px; height: 32px; border-radius: 50%; border: 2px solid #CBD5E1; background: #fff; color: #64748B; font-size: 18px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all .15s; }
+.flow-add-btn:hover { border-color: #0891B2; color: #0891B2; background: #F0F9FF; }
+
+/* Completion */
+.completion-block { background: #F1F5F9; border: 2px dashed #CBD5E1; border-radius: 10px; padding: 16px; text-align: center; color: #64748B; font-size: 13px; font-weight: 600; display: flex; align-items: center; justify-content: center; gap: 8px; }
+.completion-block svg { width: 18px; height: 18px; }
+
+/* Slide Panel */
+.panel-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.3); z-index: 200; display: none; opacity: 0; transition: opacity .2s; }
+.panel-overlay.show { display: block; opacity: 1; }
+.slide-panel { position: fixed; top: 0; right: -420px; width: 380px; height: 100vh; background: #fff; box-shadow: -4px 0 20px rgba(0,0,0,0.1); z-index: 201; transition: right .25s ease; overflow-y: auto; }
+.slide-panel.show { right: 0; }
+.panel-header { padding: 20px 24px; border-bottom: 1px solid #E2E8F0; display: flex; align-items: center; justify-content: space-between; }
+.panel-header h3 { font-size: 16px; font-weight: 700; color: #1A2332; }
+.panel-close { width: 32px; height: 32px; border-radius: 8px; border: none; background: #F1F5F9; color: #64748B; cursor: pointer; font-size: 18px; display: flex; align-items: center; justify-content: center; }
+.panel-close:hover { background: #E2E8F0; }
+.panel-body { padding: 20px 24px; }
+.step-option { display: flex; align-items: center; gap: 14px; padding: 14px 16px; border: 1px solid #E2E8F0; border-radius: 10px; cursor: pointer; transition: all .15s; margin-bottom: 10px; }
+.step-option:hover { border-color: #0891B2; background: #F0F9FF; }
+.step-option .step-icon { width: 36px; height: 36px; font-size: 16px; }
+.step-option-name { font-size: 14px; font-weight: 600; color: #1E293B; }
+.step-option-desc { font-size: 11px; color: #94A3B8; margin-top: 2px; }
+
+/* Settings tab */
+.settings-area { max-width: 560px; margin: 28px auto; padding: 0 24px; }
+.card { background: #fff; border: 1px solid #E2E8F0; border-radius: 12px; padding: 24px; margin-bottom: 20px; }
+.card-title { font-size: 14px; font-weight: 700; color: #1A2332; margin-bottom: 18px; }
+.form-group { margin-bottom: 16px; }
+.form-group:last-child { margin-bottom: 0; }
+.form-label { display: block; font-size: 12px; font-weight: 600; color: #64748B; margin-bottom: 6px; }
+.form-label .req { color: #EF4444; margin-left: 2px; }
+.form-input, .form-select, .form-textarea { width: 100%; padding: 9px 12px; border: 1px solid #E2E8F0; border-radius: 8px; font-size: 13px; color: #1E293B; background: #fff; outline: none; font-family: inherit; }
+.form-input:focus, .form-select:focus, .form-textarea:focus { border-color: #0891B2; box-shadow: 0 0 0 3px rgba(8,145,178,0.1); }
+.form-textarea { resize: vertical; min-height: 72px; }
+.form-select { cursor: pointer; appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2364748B' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 12px center; padding-right: 32px; }
+
+/* Toggle switch */
+.toggle-row { display: flex; align-items: center; justify-content: space-between; }
+.toggle-info { flex: 1; }
+.toggle-info .form-label { margin-bottom: 2px; }
+.toggle-desc { font-size: 11px; color: #94A3B8; }
+.toggle-switch { width: 44px; height: 24px; border-radius: 12px; background: #CBD5E1; position: relative; cursor: pointer; transition: background .2s; flex-shrink: 0; }
+.toggle-switch.on { background: #0891B2; }
+.toggle-switch::after { content: ''; position: absolute; width: 20px; height: 20px; border-radius: 50%; background: #fff; top: 2px; left: 2px; transition: left .2s; box-shadow: 0 1px 3px rgba(0,0,0,0.15); }
+.toggle-switch.on::after { left: 22px; }
+
+/* Example schedule modal */
+.modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.4); z-index: 300; display: none; align-items: center; justify-content: center; }
+.modal-overlay.show { display: flex; }
+.modal { background: #fff; border-radius: 16px; width: 520px; max-height: 80vh; overflow-y: auto; box-shadow: 0 20px 60px rgba(0,0,0,0.15); }
+.modal-header { padding: 20px 24px; border-bottom: 1px solid #E2E8F0; display: flex; align-items: center; justify-content: space-between; }
+.modal-header h3 { font-size: 16px; font-weight: 700; color: #1A2332; }
+.modal-close { width: 32px; height: 32px; border-radius: 8px; border: none; background: #F1F5F9; color: #64748B; cursor: pointer; font-size: 18px; display: flex; align-items: center; justify-content: center; }
+.modal-body { padding: 24px; }
+.timeline-item { display: flex; gap: 14px; margin-bottom: 20px; position: relative; }
+.timeline-item:last-child { margin-bottom: 0; }
+.timeline-dot { width: 12px; height: 12px; border-radius: 50%; background: #0891B2; flex-shrink: 0; margin-top: 4px; position: relative; z-index: 1; }
+.timeline-item:not(:last-child) .timeline-dot::after { content: ''; position: absolute; left: 5px; top: 12px; width: 2px; height: calc(100% + 16px); background: #E2E8F0; }
+.timeline-info { flex: 1; }
+.timeline-day { font-size: 12px; font-weight: 700; color: #0891B2; margin-bottom: 2px; }
+.timeline-action { font-size: 13px; font-weight: 600; color: #1E293B; }
+.timeline-desc { font-size: 11px; color: #94A3B8; }
+</style>
+</head>
+<body>
+
+<div class="page-header">
+  <div class="header-left">
+    <div class="tab active" data-tab="edit" onclick="switchTab('edit')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+      시퀀스 편집
+    </div>
+    <div class="tab" data-tab="settings" onclick="switchTab('settings')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
+      시퀀스 설정
+    </div>
+  </div>
+  <div class="header-right">
+    <button class="btn btn-save" onclick="alert('시퀀스가 저장되었습니다.')">저장</button>
+  </div>
+</div>
+
+<!-- Edit Tab -->
+<div class="tab-content active" id="tab-edit">
+  <div class="summary-bar" id="summaryBar">
+    <div class="summary-item">
+      <div class="summary-icon teal">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+      </div>
+      <div>
+        <div class="summary-value" id="totalSteps">5</div>
+        <div class="summary-label">총 스텝</div>
+      </div>
+    </div>
+    <div class="summary-divider"></div>
+    <div class="summary-item">
+      <div class="summary-icon amber">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+      </div>
+      <div>
+        <div class="summary-value" id="totalDays">14일</div>
+        <div class="summary-label">소요 시간</div>
+      </div>
+    </div>
+    <div class="summary-divider"></div>
+    <div class="summary-item">
+      <div class="summary-icon green">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+      </div>
+      <div>
+        <div class="summary-value" id="autoPercent">60%</div>
+        <div class="summary-label">자동화</div>
+      </div>
+    </div>
+    <a class="example-link" onclick="showSchedule()">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+      예시 일정보기
+    </a>
+  </div>
+
+  <div class="flow-area" id="flowArea"></div>
+</div>
+
+<!-- Settings Tab -->
+<div class="tab-content" id="tab-settings">
+  <div class="settings-area">
+    <div class="card">
+      <div class="card-title">시퀀스 설정</div>
+      <div class="form-group">
+        <label class="form-label">시퀀스 이름 <span class="req">*</span></label>
+        <input type="text" class="form-input" id="seqName" value="너처링 시퀀스">
+      </div>
+      <div class="form-group">
+        <label class="form-label">설명</label>
+        <textarea class="form-textarea" id="seqDesc">신규 리드 유입 시 단계별로 콘텐츠를 발송하여 전환을 유도하는 너처링 시퀀스입니다.</textarea>
+      </div>
+      <div class="form-group">
+        <label class="form-label">폴더</label>
+        <select class="form-select" id="seqFolder">
+          <option value="업무마켓">업무마켓</option>
+          <option value="마케팅">마케팅</option>
+          <option value="세일즈">세일즈</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">발송 시간</label>
+        <select class="form-select" id="seqSendTime">
+          <option value="business">업무 시간</option>
+          <option value="always">항상</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <div class="toggle-row">
+          <div class="toggle-info">
+            <label class="form-label" style="margin-bottom:2px;">중복 등록 방지</label>
+            <div class="toggle-desc">이미 시퀀스에 등록된 리드는 중복 등록되지 않습니다.</div>
+          </div>
+          <div class="toggle-switch on" id="dupToggle" onclick="this.classList.toggle('on')"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Step add panel -->
+<div class="panel-overlay" id="panelOverlay" onclick="closePanel()"></div>
+<div class="slide-panel" id="slidePanel">
+  <div class="panel-header">
+    <h3>스텝 추가</h3>
+    <button class="panel-close" onclick="closePanel()">&times;</button>
+  </div>
+  <div class="panel-body">
+    <div class="step-option" onclick="addStep('이메일 발송','teal','&#9993;','이메일 템플릿을 선택해주세요')">
+      <div class="step-icon teal">&#9993;</div>
+      <div>
+        <div class="step-option-name">이메일 발송</div>
+        <div class="step-option-desc">개인화된 이메일을 자동 발송합니다</div>
+      </div>
+    </div>
+    <div class="step-option" onclick="addStep('문자 메시지 발송','amber','&#9742;','문자 내용을 입력해주세요')">
+      <div class="step-icon amber">&#9742;</div>
+      <div>
+        <div class="step-option-name">문자 메시지 발송</div>
+        <div class="step-option-desc">SMS 문자 메시지를 발송합니다</div>
+      </div>
+    </div>
+    <div class="step-option" onclick="addStep('알림톡 발송','yellow','&#9993;','알림톡 템플릿을 선택해주세요')">
+      <div class="step-icon yellow">&#9993;</div>
+      <div>
+        <div class="step-option-name">알림톡 발송</div>
+        <div class="step-option-desc">카카오 알림톡을 발송합니다</div>
+      </div>
+    </div>
+    <div class="step-option" onclick="addStep('TODO 생성','green','&#9745;','TODO 내용을 입력해주세요')">
+      <div class="step-icon green">&#9745;</div>
+      <div>
+        <div class="step-option-name">TODO 생성</div>
+        <div class="step-option-desc">담당자에게 할일을 생성합니다</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Schedule modal -->
+<div class="modal-overlay" id="scheduleModal">
+  <div class="modal">
+    <div class="modal-header">
+      <h3>예시 일정</h3>
+      <button class="modal-close" onclick="hideSchedule()">&times;</button>
+    </div>
+    <div class="modal-body" id="scheduleBody"></div>
+  </div>
+</div>
+
+<script>
+// Step data
+const delayOptions = [
+  { value: 0, label: '즉시' },
+  { value: 1, label: '1일 후' },
+  { value: 2, label: '2일 후' },
+  { value: 3, label: '3일 후' },
+  { value: 5, label: '5일 후' },
+  { value: 7, label: '7일 후' },
+  { value: 14, label: '14일 후' },
+];
+
+let steps = [
+  { type: '이메일 발송', color: 'teal', icon: '&#9993;', delay: 0, config: '첫 번째 소개 메일' },
+  { type: '알림톡 발송', color: 'yellow', icon: '&#9993;', delay: 2, config: '웰컴 알림톡' },
+  { type: '이메일 발송', color: 'teal', icon: '&#9993;', delay: 5, config: '사례 소개 메일' },
+  { type: '문자 메시지 발송', color: 'amber', icon: '&#9742;', delay: 7, config: '미팅 제안 문자' },
+  { type: 'TODO 생성', color: 'green', icon: '&#9745;', delay: 14, config: '팔로업 콜 TODO' },
+];
+
+let insertIndex = -1; // where to insert new step
+
+const autoTypes = ['이메일 발송', '문자 메시지 발송', '알림톡 발송'];
+
+function updateSummary() {
+  document.getElementById('totalSteps').textContent = steps.length;
+  const maxDelay = steps.length > 0 ? Math.max(...steps.map(s => s.delay)) : 0;
+  document.getElementById('totalDays').textContent = maxDelay + '일';
+  const autoCount = steps.filter(s => autoTypes.includes(s.type)).length;
+  const pct = steps.length > 0 ? Math.round(autoCount / steps.length * 100) : 0;
+  document.getElementById('autoPercent').textContent = pct + '%';
+}
+
+function renderSteps() {
+  const area = document.getElementById('flowArea');
+  let html = '';
+
+  steps.forEach((s, i) => {
+    const delayOpts = delayOptions.map(d =>
+      `<option value="${d.value}" ${d.value === s.delay ? 'selected' : ''}>${d.label}</option>`
+    ).join('');
+
+    html += `
+      <div class="step-card">
+        <div class="step-number">${i + 1}</div>
+        <div class="step-icon ${s.color}">${s.icon}</div>
+        <div class="step-body">
+          <div class="step-type">${s.type}</div>
+          <div class="step-config">${s.config}</div>
+          <div class="step-delay">
+            <span class="step-delay-label">대기:</span>
+            <select onchange="changeDelay(${i}, this.value)">${delayOpts}</select>
+          </div>
+        </div>
+        <button class="step-delete" onclick="removeStep(${i})" title="삭제">&times;</button>
+      </div>
+    `;
+
+    // Add connector + add button between steps
+    html += `
+      <div class="flow-line">
+        <div class="flow-connector"></div>
+        <button class="flow-add-btn" onclick="openPanel(${i + 1})" title="스텝 추가">+</button>
+        <div class="flow-connector"></div>
+      </div>
+    `;
+  });
+
+  // Completion block
+  html += `
+    <div class="completion-block">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+      시퀀스 완료
+    </div>
+  `;
+
+  area.innerHTML = html;
+  updateSummary();
+}
+
+function changeDelay(idx, val) {
+  steps[idx].delay = parseInt(val);
+  updateSummary();
+}
+
+function removeStep(idx) {
+  steps.splice(idx, 1);
+  renderSteps();
+}
+
+function addStep(type, color, icon, config) {
+  const newStep = { type, color, icon, delay: 1, config };
+  if (insertIndex >= 0 && insertIndex <= steps.length) {
+    steps.splice(insertIndex, 0, newStep);
+  } else {
+    steps.push(newStep);
+  }
+  renderSteps();
+  closePanel();
+}
+
+function openPanel(idx) {
+  insertIndex = idx !== undefined ? idx : steps.length;
+  document.getElementById('panelOverlay').classList.add('show');
+  document.getElementById('slidePanel').classList.add('show');
+}
+
+function closePanel() {
+  document.getElementById('panelOverlay').classList.remove('show');
+  document.getElementById('slidePanel').classList.remove('show');
+}
+
+// Tabs
+function switchTab(tab) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+  document.querySelector(`.tab[data-tab="${tab}"]`).classList.add('active');
+  document.getElementById('tab-' + tab).classList.add('active');
+}
+
+// Schedule modal
+function showSchedule() {
+  const body = document.getElementById('scheduleBody');
+  let html = '';
+  const today = new Date();
+  steps.forEach((s, i) => {
+    const d = new Date(today);
+    d.setDate(d.getDate() + s.delay);
+    const dateStr = `${d.getMonth() + 1}월 ${d.getDate()}일 (${['일','월','화','수','목','금','토'][d.getDay()]})`;
+    const dayLabel = s.delay === 0 ? '오늘' : `+${s.delay}일`;
+    html += `
+      <div class="timeline-item">
+        <div class="timeline-dot"></div>
+        <div class="timeline-info">
+          <div class="timeline-day">${dayLabel} - ${dateStr}</div>
+          <div class="timeline-action">Step ${i + 1}: ${s.type}</div>
+          <div class="timeline-desc">${s.config}</div>
+        </div>
+      </div>
+    `;
+  });
+  body.innerHTML = html;
+  document.getElementById('scheduleModal').classList.add('show');
+}
+
+function hideSchedule() {
+  document.getElementById('scheduleModal').classList.remove('show');
+}
+
+// Close modal on overlay click
+document.getElementById('scheduleModal').addEventListener('click', function(e) {
+  if (e.target === this) hideSchedule();
+});
+
+// Initial render
+renderSteps();
+</script>
+<script>
+if (window.parent !== window) {
+  document.querySelectorAll('.sidebar').forEach(el => el.style.display = 'none');
+  document.querySelectorAll('.topbar').forEach(el => el.style.display = 'none');
+  const main = document.querySelector('.main') || document.querySelector('.content') || document.querySelector('body > div:not(.sidebar)');
+  if (main) { main.style.marginLeft = '0'; main.style.width = '100%'; }
+}
+</script>
+</body>
+</html>

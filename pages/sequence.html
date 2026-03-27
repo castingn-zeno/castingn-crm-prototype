@@ -59,7 +59,7 @@ tbody tr:hover { background: #F8FAFC; }
 
 <div class="topbar">
   <h1>시퀀스</h1>
-  <button class="btn-create">+ 시퀀스 생성</button>
+  <button class="btn-create" onclick="if(window.parent!==window){window.parent.document.getElementById('contentFrame').src='pages/sequence-create.html';window.parent.document.getElementById('pageTitle').textContent='시퀀스 생성'}else{location.href='sequence-create.html'}">+ 시퀀스 생성</button>
 </div>
 
 <div class="main">
@@ -131,5 +131,13 @@ sequences.forEach(s => {
 });
 </script>
 <script src="nav.js"></script>
+<script>
+if (window.parent !== window) {
+  document.querySelectorAll('.sidebar').forEach(el => el.style.display = 'none');
+  document.querySelectorAll('.topbar').forEach(el => el.style.display = 'none');
+  const main = document.querySelector('.main') || document.querySelector('.content') || document.querySelector('body > div:not(.sidebar)');
+  if (main) { main.style.marginLeft = '0'; main.style.width = '100%'; }
+}
+</script>
 </body>
 </html>
