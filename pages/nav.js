@@ -2,6 +2,9 @@
 // 모든 페이지에서 <script src="nav.js"></script> 로 로드하면 사이드바가 자동 삽입됨
 
 (function(){
+  // iframe 내에서 로드된 경우 사이드바 주입 스킵
+  if (window.parent !== window) return;
+
   const current = location.pathname.split('/').pop();
 
   const menuItems = [
