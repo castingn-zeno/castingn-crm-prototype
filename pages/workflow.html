@@ -81,7 +81,10 @@ tbody tr:hover { background: #F8FAFC; }
   <div class="content">
     <div class="content-header">
       <h2>전체 워크플로우 <span style="color:#64748B; font-weight:400;">(20)</span></h2>
-      <input type="text" class="search-box" placeholder="워크플로우 검색...">
+      <div style="display:flex;align-items:center;gap:10px;">
+        <input type="text" class="search-box" placeholder="워크플로우 검색...">
+        <button class="btn-create" onclick="if(window.parent!==window){window.parent.document.getElementById('contentFrame').src='pages/workflow-create.html';window.parent.document.getElementById('pageTitle').textContent='워크플로우 생성'}else{location.href='workflow-create.html'}">+ 워크플로우 생성</button>
+      </div>
     </div>
 
     <div class="table-wrap">
